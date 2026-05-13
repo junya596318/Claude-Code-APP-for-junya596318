@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ENGINEER BLASTER</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+html, body { width: 100%; height: 100%; }
+
+#game-container {
+  position: relative;
+  width: 820px;
+  height: 620px;
+  background: #000;
+  border: 1px solid #3344bb;
+  overflow: hidden;
+  box-shadow: 0 0 80px #5566ff55;
+  transition: border-color 1.2s, box-shadow 1.2s;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  animation: twinkle var(--dur) infinite var(--delay);
+  z-index: 1;
+}
+@keyframes twinkle {
+  0%,100% { opacity: var(--max-op, 1); }
+  50% { opacity: 0.2; }
+}
+
+#hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 44px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10,10,60,0.88);
+  border-bottom: 1px solid #2244cc;
+  z-index: 10;
+  font-size: 13px;
+  transition: background 1.2s, border-color 1.2s;
+}
+#hud span { color: #bbccff; letter-spacing: 1px; }
+#diff-display { font-weight: bold; }
+
+#q-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 5;
+}
+#q-box {
+  display: inline-block;
+  background: rgba(12, 22, 88, 0.93);
+  border: 2px solid #00cfff;
+  border-radius: 10px;
+  padding: 22px 32px;
+  box-shadow: 0 0 30px #00cfff55, inset 0 0 20px #00cfff11;
+  transform-origin: center center;
+  min-width: 380px;
+  max-width: 600px;
+}
+#q-text {
+  font-size: 17px;
+  color: #ffffff;
+  text-shadow: 0 0 10px #88bbff88;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+#q-chars {
+  margin-top: 14px;
+  font-size: 22px;
+  letter-spacing: 8px;
+  color: #55eeff;
+  text-shadow: 0 0 10px #00cfff99;
+  font-family: 'Courier New', monospace;
+  min-height: 30px;
+}
+#q-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #ffe566;
+  opacity: 0;
+  transition: opacity 0.5s;
+  text-shadow: 0 0 6px #ffcc44;
+}
+#q-hint.visible { opacity: 1; }
+
+#timer-wrap {
+  position: absolute;
+  bottom: 72px;
+  left: 20px; right: 20px;
+  height: 6px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+  overflow: visible;
+  z-index: 10;
+}
+#timer-bar {
+  height: 100%;
+  border-radius: 3px;
+  width: 100%;
+  transition: width 0.1s linear;
+  position: relative;
+}
+#timer-bar::after {
+  content: '';
+  position: absolute;
+  right: -2px; top: -3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: inherit;
+  box-shadow: 0 0 8px currentColor;
+}
+
+#input-area {
+  position: absolute;
+  bottom: 14px;
+  left: 20px; right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+#answer-input {
+  flex: 1;
+  background: rgba(10,20,90,0.92);
+  border: 2px solid #3366dd;
+  color: #88ddff;
+  padding: 10px 14px;
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  border-radius: 5px;
+  outline: none;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+#answer-input:focus { box-shadow: 0 0 18px #4499ffaa; border-color: #00cfff; }
+#answer-input:disabled { opacity: 0.5; cursor: not-allowed; }
+#fire-btn {
+  padding: 10px 20px;
+  background: #00cfff;
+  color: #000;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+#fire-btn:hover { background: #fff; box-shadow: 0 0 22px #00cfff; }
+
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(5,5,45,0.92);
+  z-index: 50;
+  gap: 12px;
+}
+.screen h1 { font-size: 34px; text-shadow: 0 0 20px currentColor; }
+.screen p { font-size: 14px; color: #99aadd; }
+.screen .accent { color: #00cfff; }
+.screen-btn {
+  margin-top: 16px;
+  padding: 12px 34px;
+  background: transparent;
+  border: 2px solid #00cfff;
+  color: #00cfff;
+  font-size: 17px;
+  font-family: 'Courier New', monospace;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+}
+.screen-btn:hover { background: #00cfff; color: #000; box-shadow: 0 0 24px #00cfff; }
+
+#flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; z-index: 20; }
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ptcl 0.65s var(--ease, ease-out) forwards;
+  z-index: 15;
+}
+@keyframes ptcl {
+  0% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; }
+}
+
+.score-popup {
+  position: absolute;
+  pointer-events: none;
+  font-size: 22px;
+  font-weight: bold;
+  z-index: 30;
+  animation: float-up 1s ease-out forwards;
+}
+@keyframes float-up {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-70px); opacity: 0; }
+}
+
+@keyframes shake {
+  0%,100% { transform: translate(-50%,-50%) translateX(0); }
+  15%     { transform: translate(-50%,-50%) translateX(-10px); }
+  30%     { transform: translate(-50%,-50%) translateX(10px); }
+  45%     { transform: translate(-50%,-50%) translateX(-8px); }
+  60%     { transform: translate(-50%,-50%) translateX(8px); }
+  75%     { transform: translate(-50%,-50%) translateX(-4px); }
+}
+
+@keyframes shockwave {
+  0%   { transform: translate(-50%,-50%) scale(0.2); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(10); opacity: 0; }
+}
+
+#music-btn {
+  position: absolute;
+  top: 52px; right: 8px;
+  width: 30px; height: 22px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid #334;
+  color: #778;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  z-index: 11;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
+}
+#music-btn:hover { color: #aaf; border-color: #557; }
+</style>
+</head>
+<body>
+<div id="game-container">
+
+  <!-- Background canvas (z-index 0, below stars) -->
+  <canvas id="bg-canvas" style="position:absolute;inset:0;width:820px;height:620px;z-index:0;pointer-events:none;"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <span id="q-counter">問題 1 / 10</span>
+    <span id="diff-display">難易度: ★☆☆☆  EASY</span>
+    <span id="score-disp">SCORE: 0</span>
+  </div>
+
+  <div id="flash"></div>
+
+  <div id="q-wrapper">
+    <div id="q-box">
+      <div id="q-text"></div>
+      <div id="q-chars"></div>
+      <div id="q-hint">ヒント: <span id="hint-text"></span></div>
+    </div>
+  </div>
+
+  <div id="timer-wrap"><div id="timer-bar"></div></div>
+
+  <div id="input-area">
+    <input id="answer-input" type="text" placeholder="答えを入力して Enter ..." autocomplete="off" spellcheck="false" />
+    <button id="fire-btn">撃破！</button>
+  </div>
+
+  <!-- START screen -->
+  <div id="start-screen" class="screen">
+    <h1 style="color:#00cfff">⚡ ENGINEER BLASTER ⚡</h1>
+    <p>迫りくる問題を制限時間内に撃破せよ！</p>
+    <p>毎回 <span class="accent">10問</span> をランダム出題・3問ごとに難易度アップ</p>
+    <p style="margin-top:6px">答えを入力して <span class="accent">Enter</span> で撃破！</p>
+    <p style="font-size:12px; color:#556688; margin-top:8px">
+      🌿 Q1-3: EASY (25s) ジャングル　🏙️ Q4-6: NORMAL (18s) 都会<br>
+      🌤️ Q7-9: HARD (13s) 空の上　🚀 Q10: EXTREME (10s) 宇宙
+    </p>
+    <button class="screen-btn" id="start-btn">START</button>
+  </div>
+
+  <!-- CLEAR screen -->
+  <div id="clear-screen" class="screen" style="display:none">
+    <h1 style="color:#00ff88">🎉 MISSION COMPLETE 🎉</h1>
+    <p id="final-score" style="font-size:20px; color:#00ff88"></p>
+    <p id="clear-time"></p>
+    <button class="screen-btn" id="retry-clear">PLAY AGAIN</button>
+  </div>
+
+  <!-- GAMEOVER screen -->
+  <div id="gameover-screen" class="screen" style="display:none">
+    <h1 style="color:#ff3344">💥 GAME OVER 💥</h1>
+    <p id="go-msg" style="font-size:16px; color:#ffaa66; margin-top:4px"></p>
+    <p id="go-score" style="font-size:14px; margin-top:6px"></p>
+    <button class="screen-btn" id="retry-over">RETRY</button>
+  </div>
+
+  <button id="music-btn" title="BGM ON/OFF">♪</button>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  QUESTION BANK
+// ═══════════════════════════════════════════
+const BANK = {
+  easy: [
+    { text: "HTMLで一番大きな\n見出しタグの番号は？",
+      answer: "1", hint: "h1〜h6 のうち最上位ランク", time: 25, diff: 1 },
+    { text: "Gitで変更をローカルに\n記録するコマンドは？(git ___)",
+      answer: "commit", hint: "確定・記録を意味する6文字の英単語", time: 25, diff: 1 },
+    { text: "Linuxでファイルの\n一覧を表示するコマンドは？",
+      answer: "ls", hint: "2文字・有名なUNIXコマンド", time: 25, diff: 1 },
+    { text: "HTMLで改行を表すタグは？\n（タグ名のみ・2文字）",
+      answer: "br", hint: "breakの頭2文字", time: 25, diff: 1 },
+    { text: "CSSで文字色を\n指定するプロパティは？",
+      answer: "color", hint: "5文字・そのものズバリの英単語", time: 25, diff: 1 },
+    { text: "Webページの骨格を作る\nマークアップ言語の略称は？（4文字）",
+      answer: "HTML", hint: "HyperText Markup ___", time: 25, diff: 1 },
+    { text: "JavaScriptで変数を\n宣言するキーワードは？(再代入可・3文字)",
+      answer: "let", hint: "ES6で導入・varの後継", time: 25, diff: 1 },
+    { text: "CSSで背景色を\n指定するプロパティは？",
+      answer: "background", hint: "10文字・「背景」をそのまま英語に", time: 25, diff: 1 },
+    { text: "PHPで変数名の先頭に\n付ける記号は？（1文字）",
+      answer: "$", hint: "1文字・ドル記号", time: 25, diff: 1 },
+    { text: "PHPで画面に文字を\n出力するキーワードは？（4文字）",
+      answer: "echo", hint: "4文字・HTMLに直接書き込む", time: 25, diff: 1 },
+  ],
+  normal: [
+    { text: "CSSでFlexboxを有効にする\ndisplay の値は？",
+      answer: "flex", hint: "4文字・フレキシブルレイアウト", time: 18, diff: 2 },
+    { text: "JavaScriptでコンソールに\n出力するメソッドは？(console.___)",
+      answer: "log", hint: "3文字・記録を意味する動詞", time: 18, diff: 2 },
+    { text: "Gitでリモートから\n最新を取得するコマンドは？(git ___)",
+      answer: "pull", hint: "4文字・pushの逆方向", time: 18, diff: 2 },
+    { text: "SQLでデータを絞り込む句は？\n(SELECT * FROM t ___)",
+      answer: "WHERE", hint: "5文字・条件を指定する節", time: 18, diff: 2 },
+    { text: "HTTPのデータ送信メソッドで\nGETの対となるものは？",
+      answer: "POST", hint: "4文字・フォーム送信でよく使う", time: 18, diff: 2 },
+    { text: "JavaScriptで\n配列を表す括弧の種類は？（2文字）",
+      answer: "[]", hint: "角括弧・ブラケット", time: 18, diff: 2 },
+    { text: "Gitで新しいブランチを\n作成・切り替えするコマンドは？(git ___ -b name)",
+      answer: "checkout", hint: "8文字・チェックアウトをそのまま", time: 18, diff: 2 },
+    { text: "PHPで文字列の長さを\n返す関数は？（6文字）",
+      answer: "strlen", hint: "string + length を組み合わせた名前", time: 18, diff: 2 },
+    { text: "PHPで配列の要素数を\n返す関数は？（5文字）",
+      answer: "count", hint: "5文字・数を数える英単語", time: 18, diff: 2 },
+    { text: "PHPで文字列を\n連結する演算子は？（1文字）",
+      answer: ".", hint: "1文字・ドット演算子", time: 18, diff: 2 },
+  ],
+  hard: [
+    { text: "2進数「1111」を\n10進数に変換すると？",
+      answer: "15", hint: "2桁の整数・2の4乗より1小さい", time: 13, diff: 3 },
+    { text: "SQLでデータを取り出す\n文の先頭キーワードは？",
+      answer: "SELECT", hint: "6文字・大文字で書く慣習あり", time: 13, diff: 3 },
+    { text: "JavaScriptで\n再代入不可の変数宣言キーワードは？",
+      answer: "const", hint: "5文字・定数を意味する英語から", time: 13, diff: 3 },
+    { text: "HTTPSの末尾 S は\n何の略？",
+      answer: "Secure", hint: "6文字・「安全な」を意味する形容詞", time: 13, diff: 3 },
+    { text: "2進数「1010」を\n10進数に変換すると？",
+      answer: "10", hint: "2桁・8 + 2 = ?", time: 13, diff: 3 },
+    { text: "JavaScriptでオブジェクトの\nキー一覧を取る静的メソッドは？\n(Object.___)",
+      answer: "keys", hint: "4文字・「鍵」の複数形", time: 13, diff: 3 },
+    { text: "CSSで要素を非表示にする\ndisplay の値は？",
+      answer: "none", hint: "4文字・「なし」を意味する英単語", time: 13, diff: 3 },
+    { text: "Gitで変更を一時退避する\nコマンドは？(git ___)",
+      answer: "stash", hint: "5文字・「隠す・しまう」の意味", time: 13, diff: 3 },
+    { text: "PHPでHTTPヘッダーを\n送信する関数は？（6文字）",
+      answer: "header", hint: "6文字・リダイレクトにも使う", time: 13, diff: 3 },
+  ],
+  extreme: [
+    { text: "Reactで「状態」を管理する\n基本 Hook は？(use___)",
+      answer: "useState", hint: "8文字・useで始まるHook", time: 10, diff: 4 },
+    { text: "キュー(Queue)のデータ構造は\nFIFO？それとも LIFO？",
+      answer: "FIFO", hint: "4文字・先入れ先出しを表すアクロニム", time: 10, diff: 4 },
+    { text: "TCP 3ウェイハンドシェイクで\n最初に送るフラグは？",
+      answer: "SYN", hint: "3文字・Synchronizeの略", time: 10, diff: 4 },
+    { text: "バイナリサーチの\n平均時間計算量 O(___) は？",
+      answer: "log n", hint: "スペース含む5文字・対数オーダー", time: 10, diff: 4 },
+    { text: "JavaScriptで非同期処理の\n結果を扱うオブジェクトは？",
+      answer: "Promise", hint: "7文字・「約束」を意味する英単語", time: 10, diff: 4 },
+  ],
+};
+
+const DIFF_LABEL = ['','★☆☆☆  EASY','★★☆☆  NORMAL','★★★☆  HARD','★★★★  EXTREME'];
+const DIFF_COLOR = ['','#44ffaa','#ffcc33','#ff6655','#ff55ff'];
+const GAME_SIZE  = 10;
+
+// ═══════════════════════════════════════════
+//  AUDIO SYSTEM
+// ═══════════════════════════════════════════
+let audioCtx     = null;
+let musicEnabled = true;
+let bgmStopped   = true;
+let bgmStep      = 0;
+let bgmHandle    = null;
+let warnActive   = false;
+let warnHandle   = null;
+
+function getACtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// BGM melody (pentatonic loop)
+const MELODY = [
+  523.25, 659.25, 783.99, 659.25,
+  523.25, 440.00, 523.25, 0,
+  587.33, 698.46, 880.00, 698.46,
+  587.33, 523.25, 587.33, 0,
+  659.25, 783.99, 987.77, 783.99,
+  659.25, 587.33, 523.25, 0,
+  440.00, 523.25, 659.25, 523.25,
+  440.00, 392.00, 440.00, 0,
+];
+
+function bgmTick() {
+  if (bgmStopped || !musicEnabled) return;
+  const ctx  = getACtx();
+  const freq = MELODY[bgmStep % MELODY.length];
+  if (freq > 0) {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.032, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.17);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.19);
+  }
+  bgmStep++;
+  bgmHandle = setTimeout(bgmTick, 190);
+}
+
+function startBgm() {
+  bgmStopped = false;
+  if (bgmHandle) clearTimeout(bgmHandle);
+  bgmTick();
+}
+
+function stopBgm() {
+  bgmStopped = true;
+  if (bgmHandle) clearTimeout(bgmHandle);
+}
+
+function playCorrect() {
+  if (!musicEnabled) return;
+  const ctx = getACtx();
+  [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const t = ctx.currentTime + i * 0.09;
+    gain.gain.setValueAtTime(0.20, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    osc.start(t);
+    osc.stop(t + 0.25);
+  });
+}
+
+function playWrong() {
+  if (!musicEnabled) return;
+  const ctx = getACtx();
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(260, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(58, ctx.currentTime + 0.38);
+  gain.gain.setValueAtTime(0.22, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.42);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.44);
+}
+
+function startWarn() {
+  if (warnActive) return;
+  warnActive = true;
+  doWarn();
+}
+
+function stopWarn() {
+  warnActive = false;
+  if (warnHandle) clearTimeout(warnHandle);
+}
+
+function doWarn() {
+  if (!warnActive || !musicEnabled) return;
+  const ctx = getACtx();
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'square';
+  osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.10, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.14);
+  warnHandle = setTimeout(doWarn, 440);
+}
+
+document.getElementById('music-btn').addEventListener('click', () => {
+  musicEnabled = !musicEnabled;
+  document.getElementById('music-btn').textContent = musicEnabled ? '♪' : '♩';
+  if (musicEnabled && !bgmStopped) startBgm();
+  else stopBgm();
+});
+
+// ═══════════════════════════════════════════
+//  BACKGROUND / THEME SYSTEM
+// ═══════════════════════════════════════════
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx    = bgCanvas.getContext('2d');
+bgCanvas.width  = 820;
+bgCanvas.height = 620;
+
+let currentTheme = 'space';
+let bgGeneration = 0;
+let bgElements   = [];
+let cityData     = null;
+
+function getTheme(idx) {
+  if (idx <= 2) return 'jungle';
+  if (idx <= 5) return 'city';
+  if (idx <= 8) return 'sky';
+  return 'space';
+}
+
+// ── Jungle helpers
+function initJungle() {
+  bgElements = [];
+  for (let i = 0; i < 20; i++) {
+    bgElements.push({
+      x: Math.random() * 820,
+      y: Math.random() * 520,
+      vy: 0.35 + Math.random() * 0.75,
+      vx: (Math.random() - 0.5) * 0.45,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.04,
+      size: 7 + Math.random() * 9,
+      col: ['#2a7a2a','#1e5e1e','#38a038','#4cc04c','#256025'][Math.floor(Math.random()*5)],
+      op: 0.35 + Math.random() * 0.45,
+    });
+  }
+}
+
+function drawTreeSil(c, x, y, w, h) {
+  c.beginPath();
+  c.moveTo(x - w*0.5, y);
+  c.lineTo(x, y - h);
+  c.lineTo(x + w*0.5, y);
+  c.closePath();
+  c.fill();
+  c.beginPath();
+  c.moveTo(x - w*0.44, y - h*0.44);
+  c.lineTo(x, y - h*1.18);
+  c.lineTo(x + w*0.44, y - h*0.44);
+  c.closePath();
+  c.fill();
+}
+
+function drawJungle(ts) {
+  const c = bgCtx;
+  const g = c.createRadialGradient(410, 280, 60, 410, 280, 520);
+  g.addColorStop(0, '#0c2c0c');
+  g.addColorStop(1, '#020d02');
+  c.fillStyle = g; c.fillRect(0, 0, 820, 620);
+
+  c.fillStyle = '#0b200b'; c.fillRect(0, 515, 820, 105);
+  c.fillStyle = '#164f16'; c.fillRect(0, 511, 820, 11);
+
+  c.fillStyle = '#040f04';
+  [[-10,515,62,230],[40,515,52,185],[115,515,44,165],
+   [750,515,58,240],[800,515,46,195],[835,515,55,215],
+   [190,515,36,145],[630,515,42,160]].forEach(([x,y,w,h]) => drawTreeSil(c,x,y,w,h));
+
+  c.strokeStyle = '#1a5a1a'; c.lineWidth = 2;
+  [[0,0,1],[0,180,1],[820,60,-1],[820,280,-1],[820,420,-1]].forEach(([sx,sy,dir]) => {
+    c.beginPath();
+    c.moveTo(sx, sy);
+    c.bezierCurveTo(sx+dir*45, sy+55, sx+dir*28, sy+110, sx+dir*6, sy+160);
+    c.stroke();
+    c.fillStyle = '#2a7a2a';
+    c.beginPath();
+    c.ellipse(sx+dir*28, sy+85, 13, 7, 0.5, 0, Math.PI*2);
+    c.fill();
+  });
+
+  bgElements.forEach(el => {
+    c.save();
+    c.translate(el.x, el.y);
+    c.rotate(el.rot + Math.sin(ts*0.001 + el.x*0.01) * 0.25);
+    c.globalAlpha = el.op;
+    c.fillStyle = el.col;
+    c.beginPath();
+    c.ellipse(0, 0, el.size, el.size*0.55, 0, 0, Math.PI*2);
+    c.fill();
+    c.restore();
+    el.x += el.vx + Math.sin(ts*0.0008 + el.y*0.012) * 0.35;
+    el.y += el.vy;
+    el.rot += el.rotV;
+    if (el.y > 555) { el.y = -15; el.x = Math.random()*820; }
+  });
+
+  const fog = c.createLinearGradient(0, 468, 0, 558);
+  fog.addColorStop(0, 'rgba(8,28,8,0)');
+  fog.addColorStop(1, 'rgba(8,28,8,0.55)');
+  c.fillStyle = fog; c.fillRect(0, 468, 820, 90);
+}
+
+// ── City helpers
+function initCity() {
+  const defs = [
+    {x:0,w:78,h:305},{x:68,w:52,h:238},{x:112,w:92,h:368},
+    {x:198,w:52,h:190},{x:242,w:72,h:290},{x:308,w:102,h:410},
+    {x:404,w:58,h:270},{x:454,w:82,h:340},{x:528,w:112,h:390},
+    {x:632,w:62,h:230},{x:686,w:82,h:310},{x:760,w:92,h:350},
+    {x:848,w:72,h:280},
+  ];
+  cityData = defs.map(b => {
+    const wins = [];
+    const cols = Math.floor(b.w / 15);
+    const rows = Math.floor(b.h / 20);
+    for (let r = 0; r < rows - 1; r++) {
+      for (let cc = 0; cc < cols; cc++) {
+        if (Math.random() > 0.38) {
+          wins.push({
+            x: b.x + 4 + cc * 15,
+            y: 620 - b.h + 9 + r * 20,
+            warm: Math.random() > 0.45,
+          });
+        }
+      }
+    }
+    return { ...b, wins };
+  });
+}
+
+function drawCity() {
+  const c = bgCtx;
+  const g = c.createLinearGradient(0, 0, 0, 620);
+  g.addColorStop(0,   '#010110');
+  g.addColorStop(0.5, '#050520');
+  g.addColorStop(1,   '#08082a');
+  c.fillStyle = g; c.fillRect(0, 0, 820, 620);
+
+  const mg = c.createRadialGradient(690, 65, 5, 690, 65, 75);
+  mg.addColorStop(0, 'rgba(210,225,255,0.28)');
+  mg.addColorStop(1, 'rgba(210,225,255,0)');
+  c.fillStyle = mg; c.fillRect(580, 0, 240, 200);
+  c.fillStyle = '#ccdaff';
+  c.beginPath(); c.arc(690, 65, 16, 0, Math.PI*2); c.fill();
+
+  if (!cityData) initCity();
+  cityData.forEach(b => {
+    c.fillStyle = '#050518';
+    c.fillRect(b.x, 620 - b.h, b.w, b.h);
+    b.wins.forEach(w => {
+      c.fillStyle = w.warm ? 'rgba(255,232,120,0.68)' : 'rgba(120,185,255,0.52)';
+      c.fillRect(w.x, w.y, 9, 12);
+    });
+  });
+
+  for (let lx = 75; lx < 820; lx += 165) {
+    c.fillStyle = '#0e0e28';
+    c.fillRect(lx, 562, 4, 58);
+    const lg = c.createRadialGradient(lx+2, 562, 0, lx+2, 562, 38);
+    lg.addColorStop(0, 'rgba(255,255,170,0.40)');
+    lg.addColorStop(1, 'rgba(255,255,100,0)');
+    c.fillStyle = lg;
+    c.beginPath(); c.arc(lx+2, 562, 38, 0, Math.PI*2); c.fill();
+  }
+
+  const sg = c.createLinearGradient(0, 595, 0, 620);
+  sg.addColorStop(0, 'rgba(30,30,80,0.4)');
+  sg.addColorStop(1, 'rgba(15,15,50,0.9)');
+  c.fillStyle = sg; c.fillRect(0, 595, 820, 25);
+}
+
+// ── Sky helpers
+function initSky() {
+  bgElements = [];
+  for (let i = 0; i < 7; i++) {
+    bgElements.push({
+      x: Math.random() * 950 - 80,
+      y: 38 + Math.random() * 210,
+      vx: 0.10 + Math.random() * 0.16,
+      w: 92 + Math.random() * 135,
+      h: 36 + Math.random() * 48,
+      op: 0.48 + Math.random() * 0.35,
+    });
+  }
+}
+
+function drawCloud(c, x, y, w, h) {
+  c.beginPath();
+  c.arc(x + w*0.25, y + h*0.5,  h*0.52, 0, Math.PI*2);
+  c.arc(x + w*0.5,  y + h*0.34, h*0.60, 0, Math.PI*2);
+  c.arc(x + w*0.75, y + h*0.5,  h*0.48, 0, Math.PI*2);
+  c.arc(x + w*0.11, y + h*0.60, h*0.42, 0, Math.PI*2);
+  c.arc(x + w*0.89, y + h*0.60, h*0.40, 0, Math.PI*2);
+  c.fill();
+}
+
+function drawSky() {
+  const c = bgCtx;
+  const g = c.createLinearGradient(0, 0, 0, 620);
+  g.addColorStop(0,    '#0d1d70');
+  g.addColorStop(0.32, '#2850a8');
+  g.addColorStop(0.62, '#c86c38');
+  g.addColorStop(0.82, '#e04018');
+  g.addColorStop(1,    '#a82508');
+  c.fillStyle = g; c.fillRect(0, 0, 820, 620);
+
+  const sg = c.createRadialGradient(410, 498, 8, 410, 498, 125);
+  sg.addColorStop(0,   'rgba(255,225,80,0.90)');
+  sg.addColorStop(0.35,'rgba(255,155,45,0.45)');
+  sg.addColorStop(1,   'rgba(255,80,0,0)');
+  c.fillStyle = sg; c.fillRect(0, 370, 820, 250);
+  c.fillStyle = '#ffe060';
+  c.beginPath(); c.arc(410, 504, 29, 0, Math.PI*2); c.fill();
+
+  bgElements.forEach(el => {
+    c.globalAlpha = el.op;
+    c.fillStyle = '#ffffff';
+    drawCloud(c, el.x, el.y, el.w, el.h);
+    c.globalAlpha = 1;
+    el.x += el.vx;
+    if (el.x > 930) el.x = -el.w;
+  });
+
+  c.fillStyle = '#160c03';
+  c.beginPath();
+  c.moveTo(0, 620); c.lineTo(0, 548);
+  c.bezierCurveTo(180, 522, 380, 542, 580, 528);
+  c.bezierCurveTo(680, 521, 770, 532, 820, 538);
+  c.lineTo(820, 620); c.closePath(); c.fill();
+}
+
+// ── Space
+function drawSpace() {
+  const c = bgCtx;
+  const g = c.createRadialGradient(410, 310, 50, 410, 310, 500);
+  g.addColorStop(0, '#0e0e50');
+  g.addColorStop(1, '#07071e');
+  c.fillStyle = g; c.fillRect(0, 0, 820, 620);
+  [[200,180,'80,40,130'],[620,140,'40,60,140'],[390,400,'70,20,100']].forEach(([nx,ny,rgb]) => {
+    const ng = c.createRadialGradient(nx,ny,10,nx,ny,180);
+    ng.addColorStop(0, `rgba(${rgb},0.18)`);
+    ng.addColorStop(1, `rgba(${rgb},0)`);
+    c.fillStyle = ng; c.fillRect(0, 0, 820, 620);
+  });
+}
+
+// ── Theme switcher
+function setTheme(theme) {
+  if (currentTheme === theme) return;
+  currentTheme = theme;
+  bgGeneration++;
+  const gen = bgGeneration;
+
+  const hud = document.getElementById('hud');
+  const gc  = document.getElementById('game-container');
+  const stars = document.querySelectorAll('.star');
+
+  if (theme === 'jungle') {
+    initJungle();
+    hud.style.background     = 'rgba(3,12,3,0.88)';
+    hud.style.borderBottomColor = '#1a5a1a';
+    gc.style.borderColor     = '#226622';
+    gc.style.boxShadow       = '0 0 80px #22882255';
+    stars.forEach(s => { s.style.display = 'none'; });
+  } else if (theme === 'city') {
+    initCity();
+    hud.style.background     = 'rgba(4,4,18,0.88)';
+    hud.style.borderBottomColor = '#2222aa';
+    gc.style.borderColor     = '#334499';
+    gc.style.boxShadow       = '0 0 80px #3355ff55';
+    stars.forEach(s => { s.style.display = 'none'; });
+  } else if (theme === 'sky') {
+    initSky();
+    hud.style.background     = 'rgba(8,16,50,0.88)';
+    hud.style.borderBottomColor = '#3355aa';
+    gc.style.borderColor     = '#6688cc';
+    gc.style.boxShadow       = '0 0 80px #4477ee55';
+    stars.forEach(s => { s.style.display = 'none'; });
+  } else {
+    hud.style.background     = 'rgba(10,10,60,0.88)';
+    hud.style.borderBottomColor = '#2244cc';
+    gc.style.borderColor     = '#3344bb';
+    gc.style.boxShadow       = '0 0 80px #5566ff55';
+    stars.forEach(s => { s.style.display = ''; });
+  }
+
+  const loop = (ts) => {
+    if (bgGeneration !== gen) return;
+    bgCtx.clearRect(0, 0, 820, 620);
+    if (theme === 'jungle') drawJungle(ts);
+    else if (theme === 'city') drawCity();
+    else if (theme === 'sky') drawSky();
+    else drawSpace();
+    if (theme === 'jungle' || theme === 'sky') requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let gameQuestions = [];
+let qIndex = 0, score = 0;
+let timerID = null, rafID = null;
+let timeLeft = 0, maxTime = 0;
+let startEpoch = 0;
+let scale = 0.6;
+let hintShown = false;
+
+// ═══════════════════════════════════════════
+//  DOM REFS
+// ═══════════════════════════════════════════
+const gc        = document.getElementById('game-container');
+const qWrapper  = document.getElementById('q-wrapper');
+const qBox      = document.getElementById('q-box');
+const qText     = document.getElementById('q-text');
+const qChars    = document.getElementById('q-chars');
+const qHint     = document.getElementById('q-hint');
+const hintText  = document.getElementById('hint-text');
+const timerBar  = document.getElementById('timer-bar');
+const ansInput  = document.getElementById('answer-input');
+const scoreDisp = document.getElementById('score-disp');
+const qCounter  = document.getElementById('q-counter');
+const diffDisp  = document.getElementById('diff-display');
+const flash     = document.getElementById('flash');
+
+const startScreen    = document.getElementById('start-screen');
+const clearScreen    = document.getElementById('clear-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+
+// ═══════════════════════════════════════════
+//  STARS (for space theme)
+// ═══════════════════════════════════════════
+(function createStars() {
+  const starColors = ['#ffffff','#aaddff','#ccccff','#ffeeaa','#aaffee','#ffaabb'];
+  for (let i = 0; i < 220; i++) {
+    const s   = document.createElement('div');
+    s.className = 'star';
+    const sz  = Math.random() * 2.8 + 0.5;
+    const col = starColors[Math.floor(Math.random() * starColors.length)];
+    const mop = (0.5 + Math.random() * 0.5).toFixed(2);
+    s.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      left:${Math.random()*100}%; top:${Math.random()*100}%;
+      background:${col};
+      --dur:${1.2+Math.random()*2.5}s;
+      --delay:${Math.random()*3}s;
+      --max-op:${mop};
+    `;
+    gc.insertBefore(s, gc.firstChild);
+  }
+})();
+
+// Initial space background draw
+setTheme('space');
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function updateCharDisplay(typed) {
+  const ans = gameQuestions[qIndex].answer;
+  const cells = [];
+  for (let i = 0; i < ans.length; i++) cells.push(i < typed.length ? '■' : '□');
+  qChars.textContent = cells.join(' ');
+}
+
+// ═══════════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════════
+function startGame() {
+  gameQuestions = [
+    ...shuffle(BANK.easy).slice(0, 3),
+    ...shuffle(BANK.normal).slice(0, 3),
+    ...shuffle(BANK.hard).slice(0, 3),
+    ...shuffle(BANK.extreme).slice(0, 1),
+  ];
+  qIndex = 0; score = 0; startEpoch = Date.now();
+  startScreen.style.display    = 'none';
+  clearScreen.style.display    = 'none';
+  gameoverScreen.style.display = 'none';
+  scoreDisp.textContent = 'SCORE: 0';
+  startBgm();
+  showQuestion();
+}
+
+function showQuestion() {
+  stopWarn();
+  const q = gameQuestions[qIndex];
+
+  setTheme(getTheme(qIndex));
+
+  qCounter.textContent = `問題 ${qIndex+1} / ${GAME_SIZE}`;
+  diffDisp.textContent = `難易度: ${DIFF_LABEL[q.diff]}`;
+  diffDisp.style.color = DIFF_COLOR[q.diff];
+  qBox.style.borderColor = DIFF_COLOR[q.diff];
+  qBox.style.boxShadow   = `0 0 28px ${DIFF_COLOR[q.diff]}55, inset 0 0 16px ${DIFF_COLOR[q.diff]}11`;
+
+  qText.textContent    = q.text;
+  hintText.textContent = q.hint;
+  qHint.classList.remove('visible');
+  hintShown = false;
+
+  updateCharDisplay('');
+  scale = 0.6;
+  qWrapper.style.animation = '';
+  qBox.style.transform  = `scale(${scale})`;
+  qBox.style.opacity    = '1';
+  qBox.style.filter     = '';
+  qBox.style.transition = '';
+
+  ansInput.value = '';
+  ansInput.disabled = false;
+  ansInput.focus();
+
+  timeLeft = q.time;
+  maxTime  = q.time;
+  updateTimerBar();
+
+  clearInterval(timerID);
+  timerID = setInterval(() => {
+    timeLeft -= 0.1;
+    if (!hintShown && timeLeft < maxTime * 0.4) {
+      hintShown = true;
+      qHint.classList.add('visible');
+    }
+    if (!warnActive && timeLeft < maxTime * 0.25) {
+      startWarn();
+    }
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      clearInterval(timerID);
+      cancelAnimationFrame(rafID);
+      timeOut();
+    }
+    updateTimerBar();
+  }, 100);
+
+  const t0 = performance.now();
+  const duration = q.time * 1000;
+  function approach(now) {
+    const p     = Math.min((now - t0) / duration, 1);
+    const eased = Math.pow(p, 1.7);
+    scale = 0.6 + eased * 1.4;
+    qBox.style.transform = `scale(${scale})`;
+    if (p > 0.65) {
+      const w = (p - 0.65) / 0.35;
+      qBox.style.filter = `brightness(${1 + w*0.6}) saturate(${1 + w*0.8})`;
+    }
+    if (p < 1) rafID = requestAnimationFrame(approach);
+  }
+  rafID = requestAnimationFrame(approach);
+}
+
+// ═══════════════════════════════════════════
+//  ANSWER CHECK
+// ═══════════════════════════════════════════
+function checkAnswer() {
+  const val = ansInput.value.trim();
+  if (!val) return;
+  const q = gameQuestions[qIndex];
+  if (val.toLowerCase() === q.answer.toLowerCase()) {
+    onCorrect(q);
+  } else {
+    onWrong();
+  }
+}
+
+function onCorrect(q) {
+  clearInterval(timerID);
+  cancelAnimationFrame(rafID);
+  stopWarn();
+  ansInput.disabled = true;
+
+  playCorrect();
+
+  const bonus  = Math.floor(timeLeft * 80);
+  const points = 300 + bonus + q.diff * 250;
+  score += points;
+  scoreDisp.textContent = `SCORE: ${score}`;
+
+  explode();
+  doFlash('#00ff88', 0.45);
+  spawnScorePopup(`+${points}`, '#00ff88');
+
+  qBox.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+  qBox.style.transform  = `scale(${scale * 1.3}) rotate(${(Math.random()-0.5)*25}deg)`;
+  qBox.style.opacity    = '0';
+
+  setTimeout(() => {
+    qBox.style.transition = '';
+    qIndex++;
+    if (qIndex >= GAME_SIZE) gameClear();
+    else showQuestion();
+  }, 750);
+}
+
+function onWrong() {
+  playWrong();
+  doFlash('#ff2233', 0.35);
+  qWrapper.style.animation = 'none';
+  requestAnimationFrame(() => { qWrapper.style.animation = 'shake 0.42s ease'; });
+  ansInput.value = '';
+  updateCharDisplay('');
+  ansInput.focus();
+}
+
+function timeOut() {
+  stopWarn();
+  ansInput.disabled = true;
+  doFlash('#ff2233', 0.6);
+  setTimeout(() => {
+    gameoverScreen.style.display = 'flex';
+    document.getElementById('go-msg').textContent =
+      `正解は「${gameQuestions[qIndex].answer}」でした`;
+    document.getElementById('go-score').textContent =
+      `到達スコア: ${score}　（${qIndex+1}問目で撃破失敗）`;
+    stopBgm();
+  }, 400);
+}
+
+// ═══════════════════════════════════════════
+//  EFFECTS
+// ═══════════════════════════════════════════
+function explode() {
+  const r  = qBox.getBoundingClientRect();
+  const cr = gc.getBoundingClientRect();
+  const cx = r.left - cr.left + r.width  / 2;
+  const cy = r.top  - cr.top  + r.height / 2;
+  const colors = ['#ff6600','#ffcc00','#ff4455','#ffffff','#00eeff','#cc44ff','#00ff88'];
+
+  for (let i = 0; i < 36; i++) {
+    const p   = document.createElement('div');
+    p.className = 'particle';
+    const sz  = Math.random() * 13 + 4;
+    const ang = Math.random() * Math.PI * 2;
+    const dist= Math.random() * 130 + 50;
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      left:${cx}px; top:${cy}px;
+      background:${col};
+      --tx:${Math.cos(ang)*dist}px;
+      --ty:${Math.sin(ang)*dist}px;
+      box-shadow:0 0 6px ${col};
+    `;
+    gc.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+
+  const ring = document.createElement('div');
+  ring.style.cssText = `
+    position:absolute; left:${cx}px; top:${cy}px;
+    width:12px; height:12px;
+    border:3px solid #00eeff; border-radius:50%;
+    animation:shockwave 0.55s ease-out forwards;
+    pointer-events:none; z-index:15;
+  `;
+  gc.appendChild(ring);
+  setTimeout(() => ring.remove(), 600);
+}
+
+function doFlash(color, alpha) {
+  flash.style.background = color;
+  flash.style.transition = 'none';
+  flash.style.opacity    = alpha;
+  setTimeout(() => {
+    flash.style.transition = 'opacity 0.4s';
+    flash.style.opacity    = 0;
+  }, 80);
+}
+
+function spawnScorePopup(text, color) {
+  const el = document.createElement('div');
+  el.className = 'score-popup';
+  el.textContent = text;
+  el.style.cssText = `
+    left:${280 + Math.random()*200}px;
+    top:${150 + Math.random()*80}px;
+    color:${color};
+    text-shadow:0 0 10px ${color};
+    font-family:'Courier New',monospace;
+  `;
+  gc.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+function updateTimerBar() {
+  const pct = (timeLeft / maxTime) * 100;
+  timerBar.style.width = pct + '%';
+  if (pct > 55) {
+    timerBar.style.background = 'linear-gradient(to right, #00cc66, #00eeff)';
+    timerBar.style.color = '#00eeff';
+  } else if (pct > 25) {
+    timerBar.style.background = 'linear-gradient(to right, #ff8800, #ffcc00)';
+    timerBar.style.color = '#ffcc00';
+  } else {
+    timerBar.style.background = 'linear-gradient(to right, #cc0022, #ff3344)';
+    timerBar.style.color = '#ff3344';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  GAME CLEAR
+// ═══════════════════════════════════════════
+function gameClear() {
+  stopBgm();
+  clearScreen.style.display = 'flex';
+  const elapsed = Math.floor((Date.now() - startEpoch) / 1000);
+  document.getElementById('final-score').textContent = `最終スコア: ${score}`;
+  document.getElementById('clear-time').textContent  = `クリアタイム: ${elapsed} 秒`;
+  for (let i = 0; i < 7; i++) {
+    setTimeout(() => fireworks(Math.random()*760+30, Math.random()*400+80), i*180);
+  }
+  // Victory fanfare
+  if (musicEnabled) {
+    const ctx = getACtx();
+    [523.25,659.25,783.99,1046.5,783.99,1046.5,1318.5].forEach((f,i) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = f;
+      const t = ctx.currentTime + i*0.13;
+      g.gain.setValueAtTime(0.22, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.start(t); osc.stop(t + 0.3);
+    });
+  }
+}
+
+function fireworks(x, y) {
+  const cols = ['#ff6600','#ffcc00','#00ff88','#00eeff','#ff44cc','#ffffff'];
+  for (let i = 0; i < 22; i++) {
+    const p   = document.createElement('div');
+    p.className = 'particle';
+    const sz  = Math.random()*10+3;
+    const ang = Math.random()*Math.PI*2;
+    const d   = Math.random()*90+30;
+    const col = cols[Math.floor(Math.random()*cols.length)];
+    p.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      left:${x}px; top:${y}px;
+      background:${col};
+      --tx:${Math.cos(ang)*d}px;
+      --ty:${Math.sin(ang)*d}px;
+      --ease: ease-out;
+    `;
+    gc.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════
+document.getElementById('start-btn'  ).addEventListener('click', startGame);
+document.getElementById('retry-clear').addEventListener('click', startGame);
+document.getElementById('retry-over' ).addEventListener('click', startGame);
+document.getElementById('fire-btn'   ).addEventListener('click', checkAnswer);
+ansInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+ansInput.addEventListener('input',   () => updateCharDisplay(ansInput.value));
+
+// ═══════════════════════════════════════════
+//  FIT TO VIEWPORT
+// ═══════════════════════════════════════════
+function fitGame() {
+  const s = Math.min(window.innerWidth / 820, window.innerHeight / 620);
+  gc.style.transformOrigin = 'center center';
+  gc.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitGame);
+fitGame();
+</script>
+</body>
+</html>
