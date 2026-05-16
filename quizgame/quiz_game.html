@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ざっくり雑学クイズ！</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+    @keyframes twinkle { from { opacity: 0.2; transform: scale(1); } to { opacity: 1; transform: scale(1.3); } }
+    #app { position: relative; z-index: 10; width: 100%; max-width: 700px; padding: 20px; }
+
+    /* タイトル */
+    #title-screen { text-align: center; animation: fadeIn 0.8s ease; }
+    .title-emoji { font-size: 80px; display: block; animation: bounce 1.5s infinite; }
+    @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    .title-text { font-size: 42px; font-weight: 900; color: #fff; text-shadow: 0 0 20px #f9ca24, 0 0 40px #f0932b; margin: 10px 0; letter-spacing: 4px; }
+    .title-sub { font-size: 15px; color: #dfe6e9; margin-bottom: 25px; }
+    .difficulty-label { font-size: 18px; color: #a29bfe; font-weight: bold; margin-bottom: 16px; letter-spacing: 2px; }
+    .difficulty-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 480px; margin: 0 auto; }
+    .diff-btn {
+      font-size: 20px; font-weight: 900; padding: 18px 10px;
+      border: none; border-radius: 18px; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 2px; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .diff-btn:hover { transform: scale(1.06); }
+    .diff-easy   { background: linear-gradient(135deg, #00b894, #00cec9); color: #fff; }
+    .diff-normal { background: linear-gradient(135deg, #f9ca24, #f0932b); color: #2d3436; }
+    .diff-hard   { background: linear-gradient(135deg, #d63031, #e17055); color: #fff; }
+    .diff-random { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff; }
+    .diff-easy:hover   { box-shadow: 0 10px 30px rgba(0,184,148,0.5); }
+    .diff-normal:hover { box-shadow: 0 10px 30px rgba(249,202,36,0.5); }
+    .diff-hard:hover   { box-shadow: 0 10px 30px rgba(214,48,49,0.5); }
+    .diff-random:hover { box-shadow: 0 10px 30px rgba(108,92,231,0.5); }
+
+    /* クイズ画面 */
+    #quiz-screen { display: none; animation: fadeIn 0.5s ease; }
+    .diff-badge {
+      display: inline-block; font-size: 12px; font-weight: bold;
+      padding: 3px 12px; border-radius: 20px; margin-bottom: 10px; letter-spacing: 1px;
+    }
+    .badge-easy   { background: #00b894; color: #fff; }
+    .badge-normal { background: #f9ca24; color: #2d3436; }
+    .badge-hard   { background: #d63031; color: #fff; }
+    .badge-random { background: #6c5ce7; color: #fff; }
+    .progress-bar-wrap { background: rgba(255,255,255,0.15); border-radius: 20px; height: 12px; margin-bottom: 10px; overflow: hidden; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); border-radius: 20px; transition: width 0.5s ease; }
+    .progress-label { text-align: right; color: #a29bfe; font-size: 14px; margin-bottom: 6px; }
+    .score-display { text-align: center; color: #f9ca24; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+    .question-card { background: rgba(255,255,255,0.07); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 28px; margin-bottom: 18px; }
+    .question-category { display: inline-block; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; font-size: 12px; font-weight: bold; padding: 4px 14px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 2px; }
+    .question-text { font-size: 21px; font-weight: bold; color: #fff; line-height: 1.6; }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .choice-btn { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2); color: #fff; font-size: 16px; font-weight: bold; padding: 16px 12px; border-radius: 16px; cursor: pointer; transition: all 0.2s; line-height: 1.4; }
+    .choice-btn:hover:not(:disabled) { background: rgba(255,255,255,0.18); transform: scale(1.03); border-color: #a29bfe; }
+    .choice-btn.correct { background: linear-gradient(135deg, #00b894, #00cec9) !important; border-color: #00b894 !important; animation: correctPulse 0.4s ease; }
+    .choice-btn.wrong   { background: linear-gradient(135deg, #d63031, #e17055) !important; border-color: #d63031 !important; animation: shake 0.5s ease; }
+    .choice-btn.show-answer { background: linear-gradient(135deg, #00b894, #00cec9) !important; border-color: #00b894 !important; opacity: 0.7; }
+    @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+    .answer-hint { color: #fdcb6e; font-size: 15px; margin-top: 12px; min-height: 24px; font-weight: bold; }
+    .next-btn { background: linear-gradient(135deg, #00b894, #00cec9); color: #fff; font-size: 19px; font-weight: bold; padding: 13px 38px; border: none; border-radius: 50px; cursor: pointer; margin-top: 18px; display: none; letter-spacing: 2px; box-shadow: 0 6px 20px rgba(0,184,148,0.4); transition: all 0.2s; }
+    .next-btn:hover { transform: scale(1.05); }
+    .next-btn.visible { display: inline-block; animation: fadeIn 0.4s ease; }
+
+    /* フィードバック */
+    .feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .feedback-overlay.show { opacity: 1; }
+    .feedback-emoji { font-size: 120px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .feedback-text { font-size: 52px; font-weight: 900; letter-spacing: 6px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both; }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .correct-overlay { background: rgba(0,184,148,0.85); }
+    .wrong-overlay   { background: rgba(214,48,49,0.85); }
+
+    /* 結果画面 */
+    #result-screen { display: none; text-align: center; animation: fadeIn 0.8s ease; }
+    .result-emoji { font-size: 80px; display: block; margin-bottom: 8px; }
+    .result-title { font-size: 34px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .result-score { font-size: 65px; font-weight: 900; color: #f9ca24; text-shadow: 0 0 30px #f9ca24; margin: 8px 0; }
+    .result-score span { font-size: 26px; color: #dfe6e9; }
+    .result-msg { font-size: 18px; color: #dfe6e9; margin: 10px 0 18px; line-height: 1.7; }
+    .category-breakdown { background: rgba(255,255,255,0.07); border-radius: 16px; padding: 16px 20px; margin: 0 0 20px; text-align: left; }
+    .category-breakdown h3 { color: #a29bfe; font-size: 14px; letter-spacing: 2px; margin-bottom: 10px; text-align: center; }
+    .cat-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 15px; color: #dfe6e9; }
+    .cat-row:last-child { border-bottom: none; }
+    .cat-name { flex: 1; }
+    .cat-score { font-weight: bold; color: #f9ca24; font-size: 16px; margin-left: 10px; }
+    .cat-bar-wrap { width: 100px; height: 8px; background: rgba(255,255,255,0.15); border-radius: 10px; overflow: hidden; margin-left: 10px; }
+    .cat-bar { height: 100%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); border-radius: 10px; }
+    .result-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .retry-btn { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff; font-size: 20px; font-weight: 900; padding: 15px 44px; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(108,92,231,0.5); transition: all 0.2s; letter-spacing: 2px; }
+    .retry-btn:hover { transform: scale(1.07); }
+
+    /* フラッシュ・紙吹雪 */
+    .screen-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99; pointer-events: none; opacity: 0; }
+    .screen-flash.flash-correct { background: rgba(0,255,180,0.5); animation: flashAnim 0.4s ease; }
+    .screen-flash.flash-wrong   { background: rgba(255,50,50,0.5);  animation: flashAnim 0.4s ease; }
+    @keyframes flashAnim { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+    .confetti-piece { position: fixed; width: 12px; height: 12px; top: -20px; border-radius: 2px; pointer-events: none; z-index: 200; animation: confettiFall linear forwards; }
+    @keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+    .clear-glow { animation: clearGlow 1.5s infinite alternate; }
+    @keyframes clearGlow { from { text-shadow: 0 0 20px #f9ca24, 0 0 40px #f9ca24; } to { text-shadow: 0 0 40px #fdcb6e, 0 0 80px #e17055, 0 0 120px #d63031; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="screen-flash" id="screenFlash"></div>
+<div class="feedback-overlay" id="feedbackOverlay">
+  <div class="feedback-emoji" id="feedbackEmoji"></div>
+  <div class="feedback-text" id="feedbackText"></div>
+</div>
+
+<div id="app">
+  <!-- タイトル画面 -->
+  <div id="title-screen">
+    <span class="title-emoji">🧠</span>
+    <div class="title-text">ざっくり雑学クイズ！</div>
+    <div class="title-sub">全200問以上！10問ランダム出題</div>
+    <div class="difficulty-label">― 難易度を選んでね ―</div>
+    <div class="difficulty-btns">
+      <button class="diff-btn diff-easy"   onclick="startGame('easy')">🟢 イージー</button>
+      <button class="diff-btn diff-normal" onclick="startGame('normal')">🟡 ノーマル</button>
+      <button class="diff-btn diff-hard"   onclick="startGame('hard')">🔴 ハード</button>
+      <button class="diff-btn diff-random" onclick="startGame('random')">🎲 ランダム</button>
+    </div>
+  </div>
+
+  <!-- クイズ画面 -->
+  <div id="quiz-screen">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span class="diff-badge" id="diffBadge"></span>
+      <span class="progress-label" id="progressLabel">1 / 10</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar" style="width:10%"></div>
+    </div>
+    <div class="score-display" id="scoreDisplay">⭐ 正解: 0 問</div>
+    <div class="question-card">
+      <span class="question-category" id="questionCategory">カテゴリー</span>
+      <div class="question-text" id="questionText">問題文</div>
+      <div class="answer-hint" id="answerHint"></div>
+    </div>
+    <div class="choices" id="choices"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">つぎの問題へ ➡</button>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="result-screen">
+    <span class="result-emoji" id="resultEmoji"></span>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="category-breakdown" id="categoryBreakdown">
+      <h3>📊 カテゴリー別スコア</h3>
+      <div id="catRows"></div>
+    </div>
+    <div class="result-btns">
+      <button class="retry-btn" onclick="resetGame()">🔄 もう一度あそぶ！</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 問題バンク（全200問以上） =====
+const ALL_QUESTIONS = [
+
+  // ========== EASY（イージー）==========
+
+  // 🐾 生きもの Easy
+  { difficulty:"easy", category:"🐾 生きもの", q:"世界で一番大きい動物はどれ？", choices:["アフリカゾウ","シロナガスクジラ","キリン","ホオジロザメ"], answer:1, explain:"シロナガスクジラは体長30m以上、体重200トン！地球史上最大の動物だよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"タコの心臓はいくつある？", choices:["1つ","2つ","3つ","5つ"], answer:2, explain:"タコは心臓が3つ！エラ用が2つ＋体全体用が1つあるよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"チーターが走る速さは時速何kmくらい？", choices:["約60km","約80km","約110km","約150km"], answer:2, explain:"チーターは時速110kmで走れる！世界最速の陸上動物だよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"コアラが主食にしているのはどれ？", choices:["バナナ","ユーカリの葉","タケ","魚"], answer:1, explain:"コアラはユーカリの葉だけ食べるよ。毒があるけど体で分解できるんだ！" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"ペンギンは空を飛べる？", choices:["飛べる","飛べない","水中だけ飛べる","小さいペンギンだけ飛べる"], answer:1, explain:"ペンギンの翼はひれに進化しているので空を飛べないけど、泳ぐのが得意！" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"カンガルーの赤ちゃんが育つ場所は？", choices:["木の穴","土の中","おなかのふくろ","背中のこぶ"], answer:2, explain:"カンガルーのお母さんのおなかにある「育児嚢（いくじのう）」で赤ちゃんは育つよ！" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"パンダの好物はどれ？", choices:["バナナ","ユーカリ","タケ（竹）","さかな"], answer:2, explain:"ジャイアントパンダは竹（タケ）が大好き！1日に20kg以上食べることもあるよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"ライオンは何科の動物？", choices:["イヌ科","クマ科","ネコ科","ウシ科"], answer:2, explain:"ライオンはネコ科の動物！家猫の遠いなかまだよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"サメは魚類か哺乳類か？", choices:["魚類","哺乳類","は虫類","両生類"], answer:0, explain:"サメは魚類！えらで呼吸するよ。イルカやクジラは哺乳類だよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"クモは虫（昆虫）のなかま？", choices:["そう","ちがう","種類による","昆虫のボス"], answer:1, explain:"クモは足が8本で昆虫じゃなく「クモ類」！昆虫は足が6本だよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"カメは何類？", choices:["魚類","両生類","は虫類","哺乳類"], answer:2, explain:"カメはは虫類！肺で呼吸して、体温は外の気温に左右されるよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"コウモリは鳥類か哺乳類か？", choices:["鳥類","哺乳類","は虫類","昆虫類"], answer:1, explain:"コウモリは空を飛ぶけど哺乳類！お乳で赤ちゃんを育てるよ。" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"カタツムリとナメクジの関係は？", choices:["まったく別の生きもの","同じ種類のなかま","カタツムリの子どもがナメクジ","ナメクジの子どもがカタツムリ"], answer:1, explain:"どちらも「腹足類」のなかま。貝がらがあるかないかのちがいだよ！" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"ホタルが光る主な理由は？", choices:["敵から身を守るため","仲間（オス・メス）を見つけるため","体が熱いから","太陽光をためているから"], answer:1, explain:"ホタルは光の点滅パターンでオス・メスがやり取りして仲間を見つけるよ！" },
+  { difficulty:"easy", category:"🐾 生きもの", q:"蝶の成長の順番は？", choices:["卵→成虫→さなぎ→幼虫","卵→幼虫→さなぎ→成虫","幼虫→卵→さなぎ→成虫","さなぎ→卵→幼虫→成虫"], answer:1, explain:"蝶は「卵→幼虫→さなぎ→成虫」の順に育つ、完全変態をするよ！" },
+
+  // 🌿 植物・自然 Easy
+  { difficulty:"easy", category:"🌿 植物・自然", q:"植物が光合成をするとき出てくる気体は？", choices:["二酸化炭素","水素","酸素","窒素"], answer:2, explain:"植物は光合成で二酸化炭素を吸い、酸素を出すよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"虹は何色ある？", choices:["5色","6色","7色","8色"], answer:2, explain:"赤・橙・黄・緑・青・藍・紫の7色！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"桜の花びらは何枚？", choices:["4枚","5枚","6枚","8枚"], answer:1, explain:"ソメイヨシノなど一般的な桜の花びらは5枚だよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"水は何℃で凍る？", choices:["-10℃","-4℃","0℃","4℃"], answer:2, explain:"純粋な水は0℃（標準気圧）で凍り始めるよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"水は何℃で沸騰する（標準）？", choices:["80℃","90℃","100℃","120℃"], answer:2, explain:"標準的な気圧のもとでは水は100℃で沸騰するよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"雷が光ってから音が聞こえるまでに時間がかかる理由は？", choices:["光の方が音より速いから","音の方が光より速いから","目が耳より速いから","雲が音を遅らせるから"], answer:0, explain:"光は約30万km/秒、音は約340m/秒。だから光が先に見えて音があとから来るよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"ひまわりがつぼみのときに太陽を追うのは本当？", choices:["本当","ウソ","夜だけ本当","冬だけ本当"], answer:0, explain:"成長中のつぼみは太陽を追うけど、花が開くと東向きで固定されるよ！" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"富士山は現在どんな山？", choices:["完全に死んだ火山","活火山","噴火中","ただの山"], answer:1, explain:"富士山は活火山！最後に噴火したのは1707年（宝永噴火）だよ。" },
+  { difficulty:"easy", category:"🌿 植物・自然", q:"雪の結晶の形は？", choices:["丸形","四角形","三角形","六角形"], answer:3, explain:"雪の結晶は水の分子の並び方から六角形になるよ！" },
+
+  // 🗾 都道府県 Easy
+  { difficulty:"easy", category:"🗾 都道府県", q:"日本で一番面積が広い都道府県はどこ？", choices:["岩手県","長野県","北海道","新潟県"], answer:2, explain:"北海道！広さは約8万3000km²で日本全体の約22%もあるよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"日本で一番面積が小さい都道府県はどこ？", choices:["東京都","大阪府","香川県","沖縄県"], answer:2, explain:"香川県！約1876km²で、うどんで有名だね。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"日本の首都はどこ？", choices:["大阪","京都","東京","名古屋"], answer:2, explain:"日本の首都は東京！政府の中心機能がある都市だよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"大阪の名物食べ物はどれ？", choices:["ずんだもち","たこ焼き","じゃじゃ麺","いかめし"], answer:1, explain:"たこ焼きは大阪を代表するソウルフード！" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"京都にある有名な金色のお寺は？", choices:["銀閣寺","金閣寺","東大寺","清水寺"], answer:1, explain:"金閣寺（鹿苑寺）！外壁が金箔で覆われた美しいお寺だよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"富士山は主にどの都道府県にある？", choices:["長野県と新潟県","静岡県と山梨県","神奈川県と東京都","埼玉県と栃木県"], answer:1, explain:"富士山は静岡県と山梨県にまたがる日本最高峰（3776m）だよ！" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"北海道の道庁所在地はどこ？", choices:["旭川市","函館市","札幌市","釧路市"], answer:2, explain:"北海道の道庁所在地は札幌市！北海道で一番大きな都市だよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"「ずんだもち」が有名な都道府県はどこ？", choices:["福岡県","宮城県","秋田県","山形県"], answer:1, explain:"ずんだもちは宮城県（仙台）の名物！枝豆を使った緑色のあんが特徴だよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"沖縄で有名な料理はどれ？", choices:["冷やし中華","ゴーヤチャンプル","きりたんぽ","わんこそば"], answer:1, explain:"ゴーヤチャンプルは沖縄の代表的な料理！ゴーヤと豆腐を炒めたよ。" },
+  { difficulty:"easy", category:"🗾 都道府県", q:"青森県の名産品はどれ？", choices:["みかん","りんご","バナナ","マンゴー"], answer:1, explain:"青森県はりんごの生産量日本一！全国の約60%を生産しているよ。" },
+
+  // 🔭 宇宙・科学 Easy
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"太陽系で一番大きな惑星はどれ？", choices:["土星","木星","天王星","海王星"], answer:1, explain:"木星は直径が地球の約11倍！太陽系最大の惑星だよ。" },
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"月が地球のまわりを一周するのにかかる時間は？", choices:["約1日","約1週間","約1ヶ月","約1年"], answer:2, explain:"月は約27.3日で地球を一周するよ！" },
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"地球から一番近い星は？", choices:["北極星","シリウス","太陽","月"], answer:2, explain:"地球から一番近い「恒星（自ら光る星）」は太陽！約1億5000万km先だよ。" },
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"太陽系の惑星は全部で何個？", choices:["7個","8個","9個","10個"], answer:1, explain:"水星・金星・地球・火星・木星・土星・天王星・海王星の8個だよ！" },
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"宇宙で音は聞こえる？", choices:["聞こえる","聞こえない","宇宙服があれば聞こえる","大きな音なら聞こえる"], answer:1, explain:"宇宙は真空なので音を伝える空気がなく、音は聞こえないよ！" },
+  { difficulty:"easy", category:"🔭 宇宙・科学", q:"空が青く見える理由は？", choices:["海の色が反射するから","太陽が青いから","光が空気で散乱するから","雲が青いから"], answer:2, explain:"太陽光が空気の分子に当たって散乱するとき、青い光が散乱しやすいから青く見えるよ！" },
+
+  // 🍜 食べ物 Easy
+  { difficulty:"easy", category:"🍜 食べ物", q:"チョコレートの原料はどれ？", choices:["バニラ豆","カカオ豆","コーヒー豆","大豆"], answer:1, explain:"チョコレートはカカオ豆から作られるよ！中南米が原産地だよ。" },
+  { difficulty:"easy", category:"🍜 食べ物", q:"豆腐は何からできている？", choices:["小麦","大豆","えんどう豆","トウモロコシ"], answer:1, explain:"豆腐は大豆からできているよ！大豆の汁を固めて作るんだ。" },
+  { difficulty:"easy", category:"🍜 食べ物", q:"バターは何からできている？", choices:["大豆","牛乳（クリーム）","小麦粉","卵"], answer:1, explain:"バターは牛乳のクリーム部分を練って作るよ！" },
+  { difficulty:"easy", category:"🍜 食べ物", q:"パンの主な原料はどれ？", choices:["米","小麦","トウモロコシ","大麦"], answer:1, explain:"パンは小麦粉から作るよ！イーストで発酵させてふわふわにするんだ。" },
+  { difficulty:"easy", category:"🍜 食べ物", q:"「寿司」に使われる酢飯の「酢」は何から作る？", choices:["りんご","米","ぶどう","麦"], answer:1, explain:"日本のお寿司に使う米酢は主にお米から作られるよ！" },
+
+  // ========== NORMAL（ノーマル）==========
+
+  // 🐾 生きもの Normal
+  { difficulty:"normal", category:"🐾 生きもの", q:"イルカは魚類か哺乳類か？", choices:["魚類","哺乳類","は虫類","両生類"], answer:1, explain:"イルカは哺乳類！肺で呼吸して子どもを産んでお乳で育てるよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"カメレオンが色を変える主な理由は？", choices:["カモフラージュのため","気温調節やコミュニケーション","太陽光を吸収するため","エサを引き寄せるため"], answer:1, explain:"カメレオンは主に体温調節や仲間へのコミュニケーションで色を変えるよ！" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"フクロウが首を回せる角度は？", choices:["約90度","約180度","約270度","360度"], answer:2, explain:"フクロウは約270度も首を回せる！眼球が固定されているので首を動かして見回すよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"イカの血液の色は？", choices:["赤","青","緑","無色"], answer:1, explain:"イカの血液はヘモシアニン（銅を含む）で酸素を運ぶので青いよ！" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"サケが産まれた川に戻ることを何という？", choices:["母川回帰","川帰本能","回遊行動","産卵遡上"], answer:0, explain:"サケが生まれた川に戻る本能を「母川回帰（ぼせんかいき）」というよ！" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"ヒトデに脳はある？", choices:["ある","ない","種類による","幼体のときだけある"], answer:1, explain:"ヒトデには脳がない！神経が全身に分布した「神経網」で体を動かしているよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"クラゲは何%が水？", choices:["約60%","約75%","約90%","約95%"], answer:3, explain:"クラゲの体の約95%は水！だから砂浜に打ち上げられると干からびやすいんだ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"コウモリは目が見えない？", choices:["完全に見えない","よく見える（超音波も使う）","暗闇だけ見える","昼間だけ見える"], answer:1, explain:"コウモリは目が見えるよ！さらに超音波（エコーロケーション）も使って飛ぶんだ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"チンパンジーのDNAは人間と何%同じ？", choices:["約75%","約88%","約95%","約98%"], answer:3, explain:"チンパンジーのDNAは人間と約98%同じ！私たちのもっとも近い親戚だよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"サメには骨がある？", choices:["ある（硬骨）","ない（軟骨のみ）","赤ちゃんだけある","尾ひれだけある"], answer:1, explain:"サメは軟骨魚類で硬い骨がない！軟骨で体を支えているよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"渡り鳥が方向を見つける方法は？", choices:["星の位置だけ","地球の磁場を感知","においをたどる","リーダーだけが知っている"], answer:1, explain:"渡り鳥は地球の磁場を感知できるほか、星・太陽・地形なども使って方向を探るよ！" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"ゾウの妊娠期間は約何ヶ月？", choices:["約6ヶ月","約12ヶ月","約18ヶ月","約22ヶ月"], answer:3, explain:"アフリカゾウの妊娠期間は約22ヶ月（約2年）！陸上動物で最も長いよ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"ゴリラは草食か肉食か？", choices:["完全肉食","主に草食（雑食）","完全草食","主に肉食（雑食）"], answer:1, explain:"ゴリラは主に草食だけど昆虫も食べる雑食だよ。大きな体は植物から作られる！" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"ライオンの群れをなんという？", choices:["パック","ハード","プライド","フロック"], answer:2, explain:"ライオンの群れは「プライド」というよ！メス中心の社会を作っているんだ。" },
+  { difficulty:"normal", category:"🐾 生きもの", q:"魚の「側線（そくせん）」は何を感知する？", choices:["においと味","光の方向","水の振動・圧力変化","水温の変化"], answer:2, explain:"魚の体の横にある側線は水の微妙な振動や圧力変化を感知する感覚器官だよ！" },
+
+  // 🌿 植物・自然 Normal
+  { difficulty:"normal", category:"🌿 植物・自然", q:"世界最大の花はどれ？", choices:["ヒマワリ","ラフレシア","ハスの花","アマゾンスイレン"], answer:1, explain:"ラフレシアは直径1m、重さ10kg以上にもなる世界最大の花！腐肉のようなにおいがするよ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"竹（タケ）は木か草か？", choices:["木（樹木）","草（草本）","コケのなかま","シダのなかま"], answer:1, explain:"竹はイネ科の植物で草に分類されるよ！木のように見えるけど木材じゃないんだ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"木の年輪は何を表す？", choices:["月ごとの成長","1年ごとの成長","10年ごとの成長","降水量だけ"], answer:1, explain:"木の年輪は1年に1本できるよ！輪の数で木の年齢がわかるんだ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"葉っぱから水が蒸発することを何という？", choices:["蒸発","蒸散","放出","発散"], answer:1, explain:"葉の気孔から水蒸気が出ることを「蒸散（じょうさん）」というよ！" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"川の下流で石が丸くなる理由は？", choices:["雨に溶けるから","流れで削れてぶつかり合うから","泥が固まるから","日光で丸くなるから"], answer:1, explain:"川を流れる間に石同士がぶつかり合ってだんだん丸くなるよ！上流では角ばった石が多い。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"日本で最も深い湖はどこ？", choices:["琵琶湖（滋賀）","摩周湖（北海道）","田沢湖（秋田）","十和田湖（青森）"], answer:2, explain:"田沢湖は水深約423mで日本で最も深い湖！透明度も高いよ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"空気中で一番多い気体は？", choices:["酸素","二酸化炭素","窒素","アルゴン"], answer:2, explain:"空気の約78%は窒素！酸素は約21%、二酸化炭素はわずか0.04%ほどだよ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"オーロラが起きる原因は？", choices:["月光の反射","太陽風と地球の磁場の相互作用","南極の氷の光","雷の集まり"], answer:1, explain:"太陽から飛んでくる粒子（太陽風）が地球の磁場に導かれて大気と反応して光るよ！" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"地震の揺れを伝える波は主に何種類？", choices:["1種類","2種類（P波・S波）","3種類","4種類"], answer:1, explain:"地震波は主にP波（縦波・速い）とS波（横波・遅い）の2種類！P波が先に届くよ。" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"木の葉が秋に赤や黄色になる理由は？", choices:["気温が上がるから","クロロフィル（葉緑素）が分解されるから","養分が増えるから","虫に食べられるから"], answer:1, explain:"秋になると葉の緑色のクロロフィルが分解されてなくなり、赤や黄色の色素が目立つようになるよ！" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"鍾乳洞はどうやってできる？", choices:["火山活動","石灰岩が雨水（炭酸水）に溶けてできる","地下水が凍ってできる","岩が崩れてできる"], answer:1, explain:"石灰岩が長年の間に雨水（弱い炭酸水）に少しずつ溶けて鍾乳洞ができるよ！" },
+  { difficulty:"normal", category:"🌿 植物・自然", q:"リトマス試験紙は酸性だと何色？", choices:["青","赤","緑","黄"], answer:1, explain:"リトマス試験紙は酸性で赤、アルカリ性で青になるよ！" },
+
+  // 🗾 都道府県 Normal
+  { difficulty:"normal", category:"🗾 都道府県", q:"高知県出身の有名な幕末の人物は？", choices:["西郷隆盛","坂本龍馬","新撰組","伊藤博文"], answer:1, explain:"坂本龍馬は高知県（土佐）出身！薩長同盟の仲介など明治維新に大活躍したよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"新潟県の名産品はどれ？", choices:["みかん","コシヒカリ（米）","メロン","サンマ"], answer:1, explain:"新潟県はコシヒカリで有名な米どころ！水がきれいで美味しいお米ができるよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"日光東照宮があるのはどこ？", choices:["栃木県","群馬県","茨城県","埼玉県"], answer:0, explain:"日光東照宮は栃木県日光市にある！徳川家康を祀った世界遺産だよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"仙台（宮城県）の有名なお祭りは？", choices:["ねぶた祭","七夕祭り","よさこい祭","阿波踊り"], answer:1, explain:"仙台七夕祭りは日本三大七夕まつりのひとつ！8月に豪華な飾りが並ぶよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"四国地方は何県から成る？", choices:["3県","4県","5県","6県"], answer:1, explain:"四国は愛媛・香川・高知・徳島の4県！「四国」の名前の由来だよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"岐阜県の白川郷で有名なのは？", choices:["鉱山遺跡","合掌造り（世界遺産）","忍者屋敷","陶磁器"], answer:1, explain:"白川郷の合掌造り集落はユネスコ世界遺産！急な茅葺き屋根が特徴だよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"愛知県の名物料理はどれ？", choices:["きりたんぽ","味噌カツ・ひつまぶし","冷麺","いちご大福"], answer:1, explain:"愛知（名古屋）は味噌カツやひつまぶし・手羽先など「名古屋めし」が有名！" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"福岡県の名物料理はどれ？", choices:["冷やし中華","もつ鍋・博多ラーメン","わんこそば","冷麺"], answer:1, explain:"福岡はもつ鍋・博多ラーメン・水炊きなど美食の街！" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"鹿児島県にある世界自然遺産は？", choices:["西表島","屋久島","種子島","奄美大島"], answer:1, explain:"屋久島はユネスコ世界自然遺産！樹齢数千年の屋久杉（縄文杉など）が有名だよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"「日本一長い川」はどれ？", choices:["利根川","信濃川","石狩川","淀川"], answer:1, explain:"信濃川は全長367km！新潟県と長野県を流れる日本最長の川だよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"沖縄のシンボル的なお城の名前は？", choices:["松山城","首里城","熊本城","姫路城"], answer:1, explain:"首里城は沖縄の世界遺産！琉球王国の王宮として栄えたよ。" },
+  { difficulty:"normal", category:"🗾 都道府県", q:"石川県の城下町として有名なのは？", choices:["富山","金沢","福井","新潟"], answer:1, explain:"金沢は加賀百万石の城下町！文化・工芸が盛んな「北陸の小京都」だよ。" },
+
+  // 🔭 宇宙・科学 Normal
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"光の速さは約何万km/秒？", choices:["約3万km/秒","約30万km/秒","約300万km/秒","約3000万km/秒"], answer:1, explain:"光の速さは約30万km/秒！1秒で地球を約7.5周できるよ。" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"火星の色が赤い理由は？", choices:["大気が赤いから","表面に酸化鉄（さび）が多いから","太陽が赤く見えるから","岩が赤いから"], answer:1, explain:"火星の表面には酸化鉄（いわゆるさび）が多く、赤っぽく見えるよ！" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"月食とはどんな現象？", choices:["月が太陽を隠す","地球の影に月が入る","月が地球の影を隠す","太陽の前を月が通る"], answer:1, explain:"月食は地球の影の中に月が入る現象！月が赤銅色に見えることがあるよ。" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"地球の自転周期は？", choices:["約12時間","約24時間","約48時間","約72時間"], answer:1, explain:"地球は約24時間（1日）で1回転するよ！これが昼と夜を作り出しているよ。" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"地球の公転周期は？", choices:["約100日","約200日","約365日","約500日"], answer:2, explain:"地球は約365日（1年）で太陽のまわりを一周するよ！" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"酸性とアルカリ性の間を何という？", choices:["平性","中性","無性","均性"], answer:1, explain:"酸性でもアルカリ性でもない状態を中性というよ！純粋な水は中性。" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"国際宇宙ステーション（ISS）の高度は約何km？", choices:["約40km","約400km","約4000km","約4万km"], answer:1, explain:"ISSは約400kmの高さを1周約90分で地球を回っているよ！" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"太陽系で一番遠い惑星は？", choices:["土星","天王星","冥王星","海王星"], answer:3, explain:"海王星は太陽系8番目の惑星で最も外側を回っているよ！（冥王星は今は惑星じゃないよ）" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"DNAの正式名称は？", choices:["デオキシリボ核酸","デオキシリン核酸","デキストリン核酸","デキサリボ核酸"], answer:0, explain:"DNAはDeoxyribo Nucleic Acid、日本語でデオキシリボ核酸！遺伝情報を持つよ。" },
+  { difficulty:"normal", category:"🔭 宇宙・科学", q:"電磁波のうち、目に見えるものを何という？", choices:["紫外線","赤外線","可視光線","マイクロ波"], answer:2, explain:"人間の目で見える光を可視光線というよ！虹の7色がそれにあたるよ。" },
+
+  // 🍜 食べ物 Normal
+  { difficulty:"normal", category:"🍜 食べ物", q:"味噌は何からできている？", choices:["小麦と塩","大豆と塩と麹","米と塩","海藻と塩"], answer:1, explain:"味噌は大豆・塩・麹（こうじ）を発酵させて作るよ！地域によって種類が違うよ。" },
+  { difficulty:"normal", category:"🍜 食べ物", q:"カレーの主なスパイスはどれ？", choices:["唐辛子だけ","ターメリック・クミン・コリアンダーなど","塩と砂糖","わさびと生姜"], answer:1, explain:"カレーはターメリック（黄色）・クミン・コリアンダーなど多くのスパイスが入るよ！" },
+  { difficulty:"normal", category:"🍜 食べ物", q:"コーヒーの原料「コーヒー豆」は植物のどの部分？", choices:["根","茎","種（さくらんぼのような果実の種）","花"], answer:2, explain:"コーヒー豆はコーヒーチェリーという果実の中の種！焙煎して使うよ。" },
+  { difficulty:"normal", category:"🍜 食べ物", q:"ワインの主な原料はどれ？", choices:["りんご","麦","ぶどう","とうもろこし"], answer:2, explain:"ワインはぶどうを発酵させて作るお酒！世界中で飲まれているよ。" },
+  { difficulty:"normal", category:"🍜 食べ物", q:"「うま味（うまみ）」を最初に発見した日本人は？", choices:["野口英世","池田菊苗","北里柴三郎","本居宣長"], answer:1, explain:"うま味は1908年に池田菊苗博士が昆布だしから発見したよ！グルタミン酸が主成分だよ。" },
+
+  // 🌍 世界地理 Normal
+  { difficulty:"normal", category:"🌍 世界地理", q:"世界で一番高い山はどれ？", choices:["K2","マッキンリー","エベレスト","モンブラン"], answer:2, explain:"エベレストは標高8849m！ネパールと中国の国境にそびえるよ。" },
+  { difficulty:"normal", category:"🌍 世界地理", q:"世界で一番長い川はどれ？", choices:["アマゾン川","ナイル川","長江","ミシシッピ川"], answer:1, explain:"ナイル川は全長約6650km！アフリカのエジプトを流れるよ。" },
+  { difficulty:"normal", category:"🌍 世界地理", q:"アメリカの首都はどこ？", choices:["ニューヨーク","ロサンゼルス","ワシントンD.C.","シカゴ"], answer:2, explain:"アメリカの首都はワシントンD.C.！大統領官邸（ホワイトハウス）があるよ。" },
+  { difficulty:"normal", category:"🌍 世界地理", q:"フランスの首都はどこ？", choices:["マルセイユ","ニース","リヨン","パリ"], answer:3, explain:"フランスの首都はパリ！エッフェル塔やルーブル美術館で有名だよ。" },
+  { difficulty:"normal", category:"🌍 世界地理", q:"世界で一番大きい大陸はどれ？", choices:["アフリカ大陸","南アメリカ大陸","北アメリカ大陸","ユーラシア大陸"], answer:3, explain:"ユーラシア大陸はアジアとヨーロッパを合わせた世界最大の大陸！面積は約5460万km²。" },
+
+  // ========== HARD（ハード）==========
+
+  // 🐾 生きもの Hard
+  { difficulty:"hard", category:"🐾 生きもの", q:"タコの血液が青い理由は？", choices:["血球が青色だから","ヘモシアニン（銅）で酸素を運ぶから","色素を食べているから","深海の光を反射するから"], answer:1, explain:"タコはヘモシアニンという銅を含む物質で酸素を運ぶため血液が青いよ！" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"カワセミのくちばしの形が新幹線に応用された理由は？", choices:["色が似ているから","水に入るとき音がしないから（空気抵抗が少ない）","強度が強いから","軽いから"], answer:1, explain:"カワセミのくちばしは空気抵抗が少ない形！500系新幹線の先端デザインに取り入れられたよ。" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"ウーパールーパー（アホロートル）の特徴として正しいのは？", choices:["成体になるとエラがなくなる","幼体のまま性成熟する（ネオテニー）","肺呼吸のみ","陸上でも生活できる"], answer:1, explain:"アホロートルはネオテニー（幼熟）の典型例！幼体の特徴（外えら）を保ったまま繁殖できるよ。" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"ハダカデバネズミが持つ特殊な能力は？", choices:["空を飛べる","痛みをほぼ感じず・がんにならない・超長命","水中で長時間潜れる","体温が変わらない（変温動物）"], answer:1, explain:"ハダカデバネズミは痛みをほぼ感じず、がん細胞も作られにくく、齧歯類で最長寿（30年超）！" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"ボルボックスはどんな生き物？", choices:["大型の植物","単細胞が集まった群体藻類","深海に住む魚","菌類の一種"], answer:1, explain:"ボルボックスは数千の単細胞が集まった球状の群体藻類！動植物どちらの特徴も持つよ。" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"アリが女王アリなしでも繁殖できる種がある？", choices:["絶対にない","ある（例：アマゾンアリ）","種類にかかわらず全部できる","女王アリは実は必要ない"], answer:1, explain:"アマゾンアリ（Cataglyphis）などは単為生殖や他の種の女王を使う繁殖をするよ！" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"深海魚アンコウが発光する仕組みは？", choices:["自分で発光タンパクを作る","共生する発光バクテリアが光る","電気を放電する","光を蓄えて放出する"], answer:1, explain:"アンコウの誘引突起（イリシウム）の先端には発光バクテリアが共生して光っているよ！" },
+  { difficulty:"hard", category:"🐾 生きもの", q:"魚の側線器官が感知するものとして最も正しいのは？", choices:["においと味","光の偏光","水の圧力変化・振動","水温と塩分濃度"], answer:2, explain:"側線は水の微妙な振動・圧力波（低周波音を含む）を感知する器官で、獲物や天敵の動きを察知するよ！" },
+
+  // 🌿 植物・自然 Hard
+  { difficulty:"hard", category:"🌿 植物・自然", q:"ダイヤモンドは何でできている？", choices:["ケイ素（シリコン）の結晶","炭素（カーボン）の結晶","アルミニウムの結晶","鉄の結晶"], answer:1, explain:"ダイヤモンドは炭素原子が強固な結晶構造を作ったもの！鉛筆の芯（グラファイト）も炭素だよ。" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"鍾乳石が1cm伸びるのに約何年かかる？", choices:["約10年","約30年","約100年","約1000年"], answer:2, explain:"鍾乳石が1cm成長するのに約100年かかるよ！大きな鍾乳洞は何万年もかけてできたんだ。" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"マグニチュードが1上がると地震のエネルギーは約何倍？", choices:["約2倍","約10倍","約32倍","約100倍"], answer:2, explain:"マグニチュードが1増えるとエネルギーは約32倍！2増えると約1000倍になるよ。" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"地球のコア（核）の主成分は？", choices:["ケイ素と酸素","マグネシウムとカルシウム","鉄とニッケル","アルミニウムと銅"], answer:2, explain:"地球の中心（コア）は主に鉄とニッケルでできているよ！外核は液体、内核は固体だよ。" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"海水の塩分濃度は約何%？", choices:["約0.9%","約2%","約3.5%","約10%"], answer:2, explain:"海水の塩分濃度は平均約3.4〜3.5%！1kgの海水に約35gの塩分が含まれるよ。" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"偏西風（へんせいふう）が吹く主な理由は？", choices:["月の引力","太陽熱の不均一な分布と地球の自転（コリオリ力）","海流の影響","山脈の影響"], answer:1, explain:"偏西風は赤道と極の気温差が生む気圧の違いと、地球の自転によるコリオリ力で生じるよ！" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"桜の花が一斉に咲く仕組みの主な要因は？", choices:["気圧の変化","冬の低温刺激（休眠打破）と春の気温上昇","日照時間だけ","土の栄養分"], answer:1, explain:"桜は冬の寒さで「休眠打破」し、春の気温が一定以上になると一斉に開花するよ！" },
+  { difficulty:"hard", category:"🌿 植物・自然", q:"世界最大の砂漠はどれ？（面積で）", choices:["サハラ砂漠","アラビア砂漠","ゴビ砂漠","南極大陸（氷砂漠）"], answer:3, explain:"実は南極大陸は年間降水量が極めて少なく「寒冷砂漠」！面積はサハラより大きいよ。" },
+
+  // 🗾 歴史・都道府県 Hard
+  { difficulty:"hard", category:"📚 歴史", q:"江戸幕府を開いたのは誰？", choices:["豊臣秀吉","織田信長","徳川家康","徳川秀忠"], answer:2, explain:"1603年に徳川家康が征夷大将軍になり江戸幕府を開いたよ！約260年続いた幕府だよ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"大化の改新が起きたのは何年？", choices:["538年","645年","710年","794年"], answer:1, explain:"645年に中大兄皇子（後の天智天皇）と中臣鎌足が蘇我氏を倒して大化の改新を行ったよ！" },
+  { difficulty:"hard", category:"📚 歴史", q:"平安京（京都）が都になったのは何年？", choices:["710年","784年","794年","845年"], answer:2, explain:"794年に桓武天皇が平安京（今の京都）に都を移したよ！「鳴くよ（794）うぐいす平安京」" },
+  { difficulty:"hard", category:"📚 歴史", q:"源頼朝が鎌倉幕府を開いたのは何年？", choices:["1167年","1185年","1192年","1221年"], answer:1, explain:"1185年に源頼朝が全国に守護・地頭を置いて実質的な幕府支配を始めたよ！（1192年説もある）" },
+  { difficulty:"hard", category:"📚 歴史", q:"戦国時代の「三英傑」と呼ばれる3人は？", choices:["上杉謙信・武田信玄・北条氏康","織田信長・豊臣秀吉・徳川家康","足利義昭・明智光秀・豊臣秀吉","伊達政宗・毛利元就・島津義久"], answer:1, explain:"織田信長・豊臣秀吉・徳川家康が戦国の三英傑！天下統一を順番に成し遂げたよ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"関ケ原の戦いは何年？", choices:["1582年","1590年","1600年","1615年"], answer:2, explain:"1600年に東軍（徳川家康）vs西軍（石田三成ら）が関ケ原で激突！家康側が勝利したよ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"明治維新（明治天皇が即位した年）は何年？", choices:["1853年","1868年","1871年","1889年"], answer:1, explain:"1868年に明治天皇が即位し元号が明治になったよ！江戸幕府が終わり近代国家が始まったんだ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"日本の初の帝国憲法（大日本帝国憲法）が発布されたのは？", choices:["1868年","1877年","1889年","1890年"], answer:2, explain:"大日本帝国憲法は1889年2月11日に発布されたよ！翌年に帝国議会（議会）が開かれたんだ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"聖徳太子が制定した十七条憲法は何年？", choices:["593年","604年","645年","701年"], answer:1, explain:"604年に聖徳太子が十七条憲法を制定！「和を以て貴しとなす」が有名だよ。" },
+  { difficulty:"hard", category:"📚 歴史", q:"元寇（蒙古来襲）は何回あった？", choices:["1回","2回","3回","4回"], answer:1, explain:"元寇は1274年の文永の役と1281年の弘安の役の2回！どちらも嵐（神風）で撃退されたよ。" },
+
+  // 🔭 宇宙・科学 Hard
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"E=mc²が表すものは？", choices:["速度と加速度の関係","質量とエネルギーの等価性","電磁波の波長","重力と距離の関係"], answer:1, explain:"アインシュタインの特殊相対性理論の式！質量（m）×光速の二乗（c²）がエネルギー（E）に等しいよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"絶対零度は約何℃？", choices:["約−100℃","約−196℃","約−273℃","約−373℃"], answer:2, explain:"絶対零度は−273.15℃！これ以下の温度は存在しない理論上の最低温度だよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"元素記号「Au」は何の元素？", choices:["銀（Silver）","白金（Platinum）","金（Gold）","銅（Copper）"], answer:2, explain:"AuはラテンのAurumから。金（Gold）の元素記号だよ！" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"DNAの二重らせん構造を発見した科学者は？", choices:["メンデルとダーウィン","パスツールとコッホ","ワトソンとクリック","キュリー夫妻"], answer:2, explain:"1953年にワトソンとクリックがDNAの二重らせん構造を解明！ノーベル賞を受賞したよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"ヒッグス粒子が実験で確認されたのは何年？", choices:["1995年","2003年","2012年","2019年"], answer:2, explain:"2012年にCERNの大型ハドロン衝突型加速器（LHC）でヒッグス粒子が発見されたよ！" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"光年とは何を表す単位？", choices:["光が1年間に進む距離","光の速さ","光の強さ","星の年齢"], answer:0, explain:"光年は距離の単位！光が1年間に進む距離で約9兆4600億km（約9.46兆km）だよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"プレートテクトニクス理論を提唱したのは？", choices:["ニュートン","ウェゲナー","ダーウィン","ガリレオ"], answer:1, explain:"アルフレート・ウェゲナーが1912年に大陸移動説を提唱！現在のプレートテクトニクス理論の基礎だよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"ニュートンの第一法則（慣性の法則）は？", choices:["力は質量×加速度","力が加わらない限り物体は等速直線運動を続ける","作用と反作用は等しい","万有引力の法則"], answer:1, explain:"慣性の法則：外から力が働かなければ静止している物体は静止し続け、動いている物体は同じ速度で進み続けるよ！" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"宇宙のダークマター（暗黒物質）とは？", choices:["ブラックホールのこと","光を出さないが重力効果をもつ未解明の物質","宇宙の膨張を加速させるエネルギー","燃え尽きた星の残骸"], answer:1, explain:"ダークマターは光を出さず直接観測できないが、重力効果から存在が推定される未解明の物質！宇宙の約27%を占めるとされるよ。" },
+  { difficulty:"hard", category:"🔭 宇宙・科学", q:"量子コンピュータが使う情報の基本単位は？", choices:["ビット（bit）","バイト（byte）","量子ビット（qubit）","トリット（trit）"], answer:2, explain:"量子コンピュータは「量子ビット（qubit）」を使うよ！0と1の重ね合わせ状態を利用できるんだ。" },
+
+  // 🌍 世界地理 Hard
+  { difficulty:"hard", category:"🌍 世界地理", q:"アマゾン川の流域はどのくらい？（面積で）", choices:["約70万km²","約200万km²","約700万km²","約1400万km²"], answer:2, explain:"アマゾン川の流域面積は約700万km²！地球の全淡水の約20%がアマゾン川に流れているよ。" },
+  { difficulty:"hard", category:"🌍 世界地理", q:"世界で一番多くの国と国境を接する国は？", choices:["ロシア","中国","ブラジル","アメリカ"], answer:0, explain:"ロシアは14か国と国境を接しており世界最多！中国は14か国（同数）だよ。" },
+  { difficulty:"hard", category:"🌍 世界地理", q:"南極条約により南極大陸は誰のものか？", choices:["国連","アメリカ","どの国のものでもない（国際的な共有地）","発見した国のもの"], answer:2, explain:"南極条約（1959年）により、南極はどの国も領有権を主張できない！科学・平和目的でのみ使えるよ。" },
+];
+
+// ===== スコアコメント =====
+const SCORE_DATA = {
+  10: { emoji:"👑", title:"🏆 パーフェクト！",  color:"#f9ca24", msg:"完璧！！雑学の神様だね！どんな問題も余裕すぎるでしょ？" },
+  9:  { emoji:"🌟", title:"🌟 ほぼ完璧！",     color:"#f9ca24", msg:"ほぼ完璧！あと1問だったのに惜しい！でも本当にすごい！" },
+  8:  { emoji:"✨", title:"✨ すごい！",         color:"#f9ca24", msg:"めちゃくちゃよくできてる！雑学上級者だね！" },
+  7:  { emoji:"💪", title:"💪 なかなか！",       color:"#a29bfe", msg:"なかなかやるじゃん！もう少しで上級者！もう一押し！" },
+  6:  { emoji:"😊", title:"😊 いい感じ！",       color:"#a29bfe", msg:"半分以上正解！いい調子だよ！もっと上を目指そう！" },
+  5:  { emoji:"🎯", title:"🎯 ちょうど半分！",   color:"#74b9ff", msg:"ちょうど半分！あと1問でプラス！次は超えられるかな？" },
+  4:  { emoji:"💡", title:"💡 もう少し！",       color:"#74b9ff", msg:"もう少し！問題を読み直してまたチャレンジしよう！" },
+  3:  { emoji:"📖", title:"📖 次はがんばれ！",   color:"#74b9ff", msg:"これからこれから！問題を読んで少しずつ覚えていこう！" },
+};
+function getScoreData(score) {
+  return SCORE_DATA[score] || { emoji:"😅", title:"😅 ドンマイ！", color:"#74b9ff", msg:"ドンマイ！次こそがんばれ！雑学の道はまだまだ続く！" };
+}
+
+// ===== ゲーム変数 =====
+let questions = [];
+let current = 0;
+let score = 0;
+let answered = false;
+let currentDifficulty = 'normal';
+let categoryStats = {};
+
+// ===== 星 =====
+function createStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 3 + 1;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${1.5+Math.random()*2}s;`;
+    c.appendChild(s);
+  }
+}
+
+// ===== シャッフル =====
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===== ゲーム開始 =====
+function startGame(difficulty) {
+  currentDifficulty = difficulty;
+  const pool = difficulty === 'random'
+    ? ALL_QUESTIONS
+    : ALL_QUESTIONS.filter(q => q.difficulty === difficulty);
+
+  questions = shuffle(pool).slice(0, 10);
+  current = 0;
+  score = 0;
+  categoryStats = {};
+  questions.forEach(q => {
+    if (!categoryStats[q.category]) categoryStats[q.category] = { total: 0, correct: 0 };
+    categoryStats[q.category].total++;
+  });
+
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+
+  const badge = document.getElementById('diffBadge');
+  const labels = { easy:'🟢 イージー', normal:'🟡 ノーマル', hard:'🔴 ハード', random:'🎲 ランダム' };
+  const classes = { easy:'badge-easy', normal:'badge-normal', hard:'badge-hard', random:'badge-random' };
+  badge.textContent = labels[difficulty];
+  badge.className = 'diff-badge ' + classes[difficulty];
+
+  showQuestion();
+}
+
+// ===== 問題表示 =====
+function showQuestion() {
+  answered = false;
+  const q = questions[current];
+  const num = current + 1;
+
+  document.getElementById('progressLabel').textContent = `${num} / 10`;
+  document.getElementById('progressBar').style.width = `${num * 10}%`;
+  document.getElementById('scoreDisplay').textContent = `⭐ 正解: ${score} 問`;
+  document.getElementById('questionCategory').textContent = q.category;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('answerHint').textContent = '';
+  document.getElementById('nextBtn').classList.remove('visible');
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  const shuffled = shuffle(q.choices.map((c, i) => ({ text: c, idx: i })));
+  shuffled.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.text;
+    btn.onclick = () => selectAnswer(choice.idx, q, btn, shuffled);
+    choicesEl.appendChild(btn);
+  });
+}
+
+// ===== 回答処理 =====
+function selectAnswer(selectedIdx, q, clickedBtn, shuffled) {
+  if (answered) return;
+  answered = true;
+  const isCorrect = selectedIdx === q.answer;
+  const buttons = document.querySelectorAll('.choice-btn');
+
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (shuffled[i].idx === q.answer) btn.classList.add(isCorrect ? 'correct' : 'show-answer');
+  });
+
+  if (isCorrect) {
+    score++;
+    categoryStats[q.category].correct++;
+    clickedBtn.classList.add('correct');
+    showFeedback(true);
+    flashScreen('correct');
+    playBeep(true);
+  } else {
+    clickedBtn.classList.add('wrong');
+    showFeedback(false);
+    flashScreen('wrong');
+    playBeep(false);
+  }
+
+  document.getElementById('answerHint').textContent = `💡 ${q.explain}`;
+  document.getElementById('scoreDisplay').textContent = `⭐ 正解: ${score} 問`;
+  document.getElementById('nextBtn').classList.add('visible');
+}
+
+// ===== フィードバック =====
+function showFeedback(isCorrect) {
+  const overlay = document.getElementById('feedbackOverlay');
+  const emoji = document.getElementById('feedbackEmoji');
+  const text = document.getElementById('feedbackText');
+  overlay.className = 'feedback-overlay show ' + (isCorrect ? 'correct-overlay' : 'wrong-overlay');
+  emoji.textContent = isCorrect
+    ? ['🎉','⭐','🌟','🎊','✨'][Math.floor(Math.random()*5)]
+    : ['😱','💦','😰','🙈','💥'][Math.floor(Math.random()*5)];
+  text.style.color = isCorrect ? '#fff' : '#ffe0e0';
+  text.textContent = isCorrect ? '正　解！' : '残　念！';
+  setTimeout(() => { overlay.classList.remove('show'); }, 900);
+}
+
+// ===== フラッシュ =====
+function flashScreen(type) {
+  const f = document.getElementById('screenFlash');
+  f.className = `screen-flash flash-${type}`;
+  setTimeout(() => { f.className = 'screen-flash'; }, 400);
+}
+
+// ===== ビープ音 =====
+let audioCtx = null;
+function playBeep(isCorrect) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = isCorrect ? [523, 659, 784, 1047] : [400, 300];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = isCorrect ? 'sine' : 'sawtooth';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.25);
+      osc.start(audioCtx.currentTime + i * 0.12);
+      osc.stop(audioCtx.currentTime + i * 0.12 + 0.3);
+    });
+  } catch(e) {}
+}
+
+// ===== 次の問題 =====
+function nextQuestion() {
+  current++;
+  if (current >= 10) showResult();
+  else showQuestion();
+}
+
+// ===== 結果表示 =====
+function showResult() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+
+  const data = getScoreData(score);
+  document.getElementById('resultEmoji').textContent = data.emoji;
+  document.getElementById('resultTitle').textContent = data.title;
+  document.getElementById('resultTitle').style.color = data.color;
+  document.getElementById('resultTitle').className = 'result-title' + (score >= 9 ? ' clear-glow' : '');
+  document.getElementById('resultScore').innerHTML = `${score} <span>/ 10問</span>`;
+  document.getElementById('resultMsg').textContent = data.msg;
+
+  // カテゴリー別スコア
+  const catRows = document.getElementById('catRows');
+  catRows.innerHTML = '';
+  Object.entries(categoryStats).forEach(([cat, st]) => {
+    const pct = st.total > 0 ? (st.correct / st.total) * 100 : 0;
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.innerHTML = `
+      <span class="cat-name">${cat}</span>
+      <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%"></div></div>
+      <span class="cat-score">${st.correct}/${st.total}</span>
+    `;
+    catRows.appendChild(row);
+  });
+
+  if (score >= 8) launchConfetti();
+  if (score >= 9) playClearFanfare();
+}
+
+// ===== 紙吹雪 =====
+function launchConfetti() {
+  const colors = ['#f9ca24','#f0932b','#6c5ce7','#00b894','#fd79a8','#74b9ff','#a29bfe','#ff7675'];
+  for (let i = 0; i < 120; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};width:${8+Math.random()*10}px;height:${8+Math.random()*10}px;border-radius:${Math.random()>0.5?'50%':'2px'};animation-duration:${2+Math.random()*3}s;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }, i * 25);
+  }
+}
+
+// ===== ファンファーレ =====
+function playClearFanfare() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const melody = [{f:523,t:0},{f:659,t:0.15},{f:784,t:0.3},{f:1047,t:0.45},{f:784,t:0.65},{f:1047,t:0.8},{f:1319,t:1.0},{f:1047,t:1.3},{f:1319,t:1.5}];
+    melody.forEach(({f,t}) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'sine'; osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.25);
+      osc.start(audioCtx.currentTime + t); osc.stop(audioCtx.currentTime + t + 0.3);
+    });
+  } catch(e) {}
+}
+
+// ===== リセット =====
+function resetGame() {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('title-screen').style.display = 'block';
+}
+
+createStars();
+</script>
+</body>
+</html>

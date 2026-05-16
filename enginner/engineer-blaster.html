@@ -247,6 +247,46 @@ html, body { width: 100%; height: 100%; }
   transition: color 0.2s;
 }
 #music-btn:hover { color: #aaf; border-color: #557; }
+
+.mode-cards {
+  display: flex;
+  gap: 24px;
+  margin-top: 14px;
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 28px;
+  border: 2px solid #334499;
+  border-radius: 12px;
+  cursor: pointer;
+  background: rgba(8,16,70,0.7);
+  transition: all 0.22s;
+  min-width: 210px;
+  gap: 10px;
+}
+.mode-card:hover {
+  border-color: #00cfff;
+  background: rgba(0,120,200,0.18);
+  box-shadow: 0 0 22px #00cfff55;
+  transform: translateY(-3px) scale(1.02);
+}
+.mode-icon { font-size: 42px; }
+.mode-title { font-size: 15px; color: #00cfff; font-weight: bold; letter-spacing: 1px; text-align: center; }
+.mode-desc { font-size: 12px; color: #7788bb; text-align: center; line-height: 1.6; }
+#mode-label { font-size: 13px; color: #00cfff; margin-top: 2px; }
+.back-link {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #556688;
+  cursor: pointer;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  font-family: 'Courier New', monospace;
+}
+.back-link:hover { color: #99aadd; }
 </style>
 </head>
 <body>
@@ -279,9 +319,28 @@ html, body { width: 100%; height: 100%; }
     <button id="fire-btn">撃破！</button>
   </div>
 
-  <!-- START screen -->
-  <div id="start-screen" class="screen">
+  <!-- MODE SELECT screen -->
+  <div id="mode-screen" class="screen">
     <h1 style="color:#00cfff">⚡ ENGINEER BLASTER ⚡</h1>
+    <p style="color:#99aadd; font-size:14px">ゲームモードを選択してください</p>
+    <div class="mode-cards">
+      <div class="mode-card" id="mode-btn-engineer">
+        <div class="mode-icon">💻</div>
+        <div class="mode-title">エンジニア問題集</div>
+        <div class="mode-desc">HTML・CSS・JavaScript<br>PHP・Git の基礎知識</div>
+      </div>
+      <div class="mode-card" id="mode-btn-fe">
+        <div class="mode-icon">📋</div>
+        <div class="mode-title">基本情報技術者試験</div>
+        <div class="mode-desc">アルゴリズム・セキュリティ<br>ネットワーク・データベース</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- START screen -->
+  <div id="start-screen" class="screen" style="display:none">
+    <h1 style="color:#00cfff">⚡ ENGINEER BLASTER ⚡</h1>
+    <p id="mode-label"></p>
     <p>迫りくる問題を制限時間内に撃破せよ！</p>
     <p>毎回 <span class="accent">10問</span> をランダム出題・3問ごとに難易度アップ</p>
     <p style="margin-top:6px">答えを入力して <span class="accent">Enter</span> で撃破！</p>
@@ -290,6 +349,7 @@ html, body { width: 100%; height: 100%; }
       🌤️ Q7-9: HARD (13s) 空の上　🚀 Q10: EXTREME (10s) 宇宙
     </p>
     <button class="screen-btn" id="start-btn">START</button>
+    <button class="back-link" id="back-to-mode">← モード選択に戻る</button>
   </div>
 
   <!-- CLEAR screen -->
@@ -298,6 +358,7 @@ html, body { width: 100%; height: 100%; }
     <p id="final-score" style="font-size:20px; color:#00ff88"></p>
     <p id="clear-time"></p>
     <button class="screen-btn" id="retry-clear">PLAY AGAIN</button>
+    <button class="back-link" id="mode-from-clear">← モード選択に戻る</button>
   </div>
 
   <!-- GAMEOVER screen -->
@@ -306,6 +367,7 @@ html, body { width: 100%; height: 100%; }
     <p id="go-msg" style="font-size:16px; color:#ffaa66; margin-top:4px"></p>
     <p id="go-score" style="font-size:14px; margin-top:6px"></p>
     <button class="screen-btn" id="retry-over">RETRY</button>
+    <button class="back-link" id="mode-from-over">← モード選択に戻る</button>
   </div>
 
   <button id="music-btn" title="BGM ON/OFF">♪</button>
@@ -392,6 +454,88 @@ const BANK = {
       answer: "log n", hint: "スペース含む5文字・対数オーダー", time: 10, diff: 4 },
     { text: "JavaScriptで非同期処理の\n結果を扱うオブジェクトは？",
       answer: "Promise", hint: "7文字・「約束」を意味する英単語", time: 10, diff: 4 },
+  ],
+};
+
+// ═══════════════════════════════════════════
+//  QUESTION BANK — 基本情報技術者試験
+// ═══════════════════════════════════════════
+const BANK_FE = {
+  easy: [
+    { text: "1バイトは何ビット？",
+      answer: "8", hint: "8つのビットで1バイト", time: 25, diff: 1 },
+    { text: "AND演算：\n1 AND 0 の結果は？",
+      answer: "0", hint: "両方が1のときだけ結果が1になる", time: 25, diff: 1 },
+    { text: "OR演算：\n0 OR 0 の結果は？",
+      answer: "0", hint: "どちらかが1なら結果が1になる", time: 25, diff: 1 },
+    { text: "XOR演算（排他的論理和）：\n1 XOR 1 の結果は？",
+      answer: "0", hint: "値が異なるときだけ1になる", time: 25, diff: 1 },
+    { text: "コンピュータの中央処理装置の\n略称は？（3文字）",
+      answer: "CPU", hint: "Central Processing Unit", time: 25, diff: 1 },
+    { text: "主記憶装置（メインメモリ）の\n略称は？（3文字）",
+      answer: "RAM", hint: "Random Access Memory の略", time: 25, diff: 1 },
+    { text: "WebブラウザとサーバーがHTMLを\n送受信するプロトコルは？（4文字）",
+      answer: "HTTP", hint: "HyperText Transfer Protocol", time: 25, diff: 1 },
+    { text: "2進数「1010」を\n10進数に変換すると？",
+      answer: "10", hint: "8 + 2 = ?", time: 25, diff: 1 },
+    { text: "1KBは何バイト？（数字で）",
+      answer: "1024", hint: "2の10乗", time: 25, diff: 1 },
+    { text: "NOT演算：\nNOT 1 の結果は？",
+      answer: "0", hint: "入力を反転させる演算", time: 25, diff: 1 },
+  ],
+  normal: [
+    { text: "スタックのデータ構造は\nFIFO？それとも LIFO？（英4文字）",
+      answer: "LIFO", hint: "後入れ先出し：Last In First Out", time: 18, diff: 2 },
+    { text: "SQLでレコードを削除する\n命令は？（6文字）",
+      answer: "DELETE", hint: "英語で「削除する」をそのまま", time: 18, diff: 2 },
+    { text: "OSIモデルの層の数は？（数字で）",
+      answer: "7", hint: "物理層からアプリケーション層まで", time: 18, diff: 2 },
+    { text: "IPv4のアドレスは\n何ビット？（数字で）",
+      answer: "32", hint: "4オクテット × 8ビット = ?", time: 18, diff: 2 },
+    { text: "SQLでテーブルを作成する\n命令（CREATE ___）",
+      answer: "TABLE", hint: "テーブルをそのまま英語に", time: 18, diff: 2 },
+    { text: "コンパイラとインタプリタのうち\nプログラム全体を事前に変換するのは？",
+      answer: "コンパイラ", hint: "実行前に全て翻訳するタイプ", time: 18, diff: 2 },
+    { text: "2進数「11001」を\n10進数に変換すると？",
+      answer: "25", hint: "16 + 8 + 1 = ?", time: 18, diff: 2 },
+    { text: "キャッシュメモリはCPUに\n近い？遠い？（近い/遠い）",
+      answer: "近い", hint: "速度のためCPUに隣接して置かれる", time: 18, diff: 2 },
+    { text: "SQLでデータを更新する\n命令は？（6文字）",
+      answer: "UPDATE", hint: "英語で「更新する」をそのまま", time: 18, diff: 2 },
+    { text: "XOR演算：\n1 XOR 0 の結果は？",
+      answer: "1", hint: "値が異なるときだけ1になる", time: 18, diff: 2 },
+  ],
+  hard: [
+    { text: "2の8乗は？（数字で）",
+      answer: "256", hint: "256色の表現に使われる値", time: 13, diff: 3 },
+    { text: "16進数の「FF」を\n10進数に変換すると？",
+      answer: "255", hint: "2の8乗 - 1", time: 13, diff: 3 },
+    { text: "16進数の「A」を\n10進数に変換すると？（数字で）",
+      answer: "10", hint: "0〜9の後 A=10 から始まる", time: 13, diff: 3 },
+    { text: "OSI7層モデルで最下層\n（第1層）の名称は？（__層）",
+      answer: "物理", hint: "電気・光信号を扱うレイヤ", time: 13, diff: 3 },
+    { text: "プロセスが互いにリソースの\n解放を待ち続ける状態は？",
+      answer: "デッドロック", hint: "Dead + Lock", time: 13, diff: 3 },
+    { text: "DNSの役割：ドメイン名を\n何アドレスに変換する？（2文字）",
+      answer: "IP", hint: "数字で表されるネットワーク上の住所", time: 13, diff: 3 },
+    { text: "2の補数で表した\n8ビット「11111111」は10進数でいくつ？",
+      answer: "-1", hint: "符号ビットが1なので負の数", time: 13, diff: 3 },
+    { text: "対称鍵暗号と公開鍵暗号のうち\n暗号化・復号に同じ鍵を使うのは？",
+      answer: "対称鍵暗号", hint: "共通鍵暗号とも呼ばれる", time: 13, diff: 3 },
+    { text: "サブネットマスク 255.255.255.0 の\nプレフィックス長は？（数字）",
+      answer: "24", hint: "ビットが1のところを数える", time: 13, diff: 3 },
+  ],
+  extreme: [
+    { text: "素因数分解の困難性を\n安全根拠にする公開鍵暗号方式は？（3文字）",
+      answer: "RSA", hint: "考案者3名の頭文字から命名", time: 10, diff: 4 },
+    { text: "ネットワークを自律的に伝播する\n自己複製型マルウェアは？",
+      answer: "ワーム", hint: "宿主プログラムが不要", time: 10, diff: 4 },
+    { text: "2分探索の時間計算量\nO(___)は？（スペース含む5文字）",
+      answer: "log n", hint: "対数オーダー", time: 10, diff: 4 },
+    { text: "ハッシュ関数で\n異なる入力から同じ出力が生じる現象は？",
+      answer: "衝突", hint: "コリジョンとも呼ばれる", time: 10, diff: 4 },
+    { text: "各プロセスに一定時間ずつ\nCPUを割り当てるスケジューリング方式は？",
+      answer: "ラウンドロビン", hint: "Round Robin - 順番に時間を割り当てる", time: 10, diff: 4 },
   ],
 };
 
@@ -827,6 +971,7 @@ function setTheme(theme) {
 // ═══════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════
+let selectedMode = 'engineer';
 let gameQuestions = [];
 let qIndex = 0, score = 0;
 let timerID = null, rafID = null;
@@ -852,9 +997,11 @@ const qCounter  = document.getElementById('q-counter');
 const diffDisp  = document.getElementById('diff-display');
 const flash     = document.getElementById('flash');
 
+const modeScreen     = document.getElementById('mode-screen');
 const startScreen    = document.getElementById('start-screen');
 const clearScreen    = document.getElementById('clear-screen');
 const gameoverScreen = document.getElementById('gameover-screen');
+const modeLabel      = document.getElementById('mode-label');
 
 // ═══════════════════════════════════════════
 //  STARS (for space theme)
@@ -904,12 +1051,30 @@ function updateCharDisplay(typed) {
 // ═══════════════════════════════════════════
 //  GAME FLOW
 // ═══════════════════════════════════════════
+function showModeScreen() {
+  stopBgm();
+  modeScreen.style.display     = 'flex';
+  startScreen.style.display    = 'none';
+  clearScreen.style.display    = 'none';
+  gameoverScreen.style.display = 'none';
+}
+
+function showStartScreen(mode) {
+  selectedMode = mode;
+  modeScreen.style.display  = 'none';
+  startScreen.style.display = 'flex';
+  modeLabel.textContent = mode === 'fe'
+    ? 'モード：📋 基本情報技術者試験'
+    : 'モード：💻 エンジニア問題集';
+}
+
 function startGame() {
+  const bank = selectedMode === 'fe' ? BANK_FE : BANK;
   gameQuestions = [
-    ...shuffle(BANK.easy).slice(0, 3),
-    ...shuffle(BANK.normal).slice(0, 3),
-    ...shuffle(BANK.hard).slice(0, 3),
-    ...shuffle(BANK.extreme).slice(0, 1),
+    ...shuffle(bank.easy).slice(0, 3),
+    ...shuffle(bank.normal).slice(0, 3),
+    ...shuffle(bank.hard).slice(0, 3),
+    ...shuffle(bank.extreme).slice(0, 1),
   ];
   qIndex = 0; score = 0; startEpoch = Date.now();
   startScreen.style.display    = 'none';
@@ -1189,10 +1354,15 @@ function fireworks(x, y) {
 // ═══════════════════════════════════════════
 //  EVENTS
 // ═══════════════════════════════════════════
-document.getElementById('start-btn'  ).addEventListener('click', startGame);
-document.getElementById('retry-clear').addEventListener('click', startGame);
-document.getElementById('retry-over' ).addEventListener('click', startGame);
-document.getElementById('fire-btn'   ).addEventListener('click', checkAnswer);
+document.getElementById('mode-btn-engineer').addEventListener('click', () => showStartScreen('engineer'));
+document.getElementById('mode-btn-fe'      ).addEventListener('click', () => showStartScreen('fe'));
+document.getElementById('start-btn'        ).addEventListener('click', startGame);
+document.getElementById('back-to-mode'     ).addEventListener('click', showModeScreen);
+document.getElementById('retry-clear'      ).addEventListener('click', startGame);
+document.getElementById('mode-from-clear'  ).addEventListener('click', showModeScreen);
+document.getElementById('retry-over'       ).addEventListener('click', startGame);
+document.getElementById('mode-from-over'   ).addEventListener('click', showModeScreen);
+document.getElementById('fire-btn'         ).addEventListener('click', checkAnswer);
 ansInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
 ansInput.addEventListener('input',   () => updateCharDisplay(ansInput.value));
 
