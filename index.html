@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゲームランチャー</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #07071e;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px;
+}
+h1 {
+  color: #00cfff;
+  font-size: clamp(22px, 5vw, 36px);
+  text-shadow: 0 0 20px #00cfff88;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.subtitle {
+  color: #556688;
+  font-size: 13px;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+}
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+.game-card {
+  display: block;
+  text-decoration: none;
+  background: rgba(10, 20, 80, 0.7);
+  border: 2px solid #2244aa;
+  border-radius: 14px;
+  padding: 28px 24px;
+  transition: all 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,207,255,0.05), transparent);
+  pointer-events: none;
+}
+.game-card:hover, .game-card:active {
+  border-color: #00cfff;
+  background: rgba(0, 120, 200, 0.18);
+  box-shadow: 0 0 28px #00cfff44;
+  transform: translateY(-4px);
+}
+.game-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 14px;
+}
+.game-title {
+  font-size: 18px;
+  color: #00cfff;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.game-desc {
+  font-size: 12px;
+  color: #7788bb;
+  line-height: 1.7;
+}
+.tag {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 3px 10px;
+  border: 1px solid #334466;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #556688;
+  letter-spacing: 1px;
+}
+footer {
+  margin-top: 60px;
+  color: #2d3f55;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<h1>⚡ GAME LAUNCHER ⚡</h1>
+<p class="subtitle">// select your game</p>
+
+<div class="game-grid">
+
+  <a class="game-card" href="enginner/engineer-blaster.html">
+    <span class="game-icon">💻</span>
+    <div class="game-title">ENGINEER BLASTER</div>
+    <div class="game-desc">
+      ITエンジニア向け知識問題シューティング。<br>
+      制限時間内に答えを入力して敵を撃破せよ！<br>
+      <br>
+      エンジニア問題集 / 基本情報技術者試験 の<br>
+      2モードを選択できます。
+    </div>
+    <span class="tag">HTML / CSS / JS / 基本情報</span>
+  </a>
+
+  <a class="game-card" href="quizgame/quiz_game.html">
+    <span class="game-icon">🎯</span>
+    <div class="game-title">QUIZ GAME</div>
+    <div class="game-desc">
+      クイズゲームに挑戦しよう。<br>
+      知識を試せ！
+    </div>
+    <span class="tag">QUIZ</span>
+  </a>
+
+  <a class="game-card" href="quizgame/mario_game.html">
+    <span class="game-icon">🍄</span>
+    <div class="game-title">MARIO GAME</div>
+    <div class="game-desc">
+      マリオ風アクションゲーム。<br>
+      ジャンプして障害物を乗り越えろ！
+    </div>
+    <span class="tag">ACTION</span>
+  </a>
+
+</div>
+
+<footer>junya596318 / Claude-Code-APP</footer>
+
+</body>
+</html>
