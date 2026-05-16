@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイクラクイズ</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Press Start 2P', monospace;
+  min-height: 100vh;
+  background: #87ceeb;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+#sky {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg, #78b4e0 0%, #aad4f0 100%);
+  z-index: 0;
+}
+#ground {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 54px; z-index: 2;
+}
+#ground::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 16px;
+  background: #5d8a3c;
+  box-shadow: inset 0 3px 0 #7aba5c, inset 0 -2px 0 #3d6a1c;
+}
+#ground::after {
+  content: '';
+  position: absolute; top: 16px; left: 0; right: 0; bottom: 0;
+  background: #866043;
+  box-shadow: inset 0 2px 0 #a07855;
+}
+.cloud-block {
+  position: fixed; background: white;
+  image-rendering: pixelated;
+  z-index: 1;
+  animation: drift linear forwards;
+}
+@keyframes drift { from { transform:translateX(0); } to { transform:translateX(120vw); } }
+
+#wrap {
+  position: relative; z-index: 10;
+  width: 100%; max-width: 480px;
+  padding: 16px 12px 80px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.screen { display:none; width:100%; flex-direction:column; align-items:center; gap:12px; }
+.screen.active { display:flex; }
+
+/* Creeper pixel art */
+#creeper-art {
+  display: grid;
+  grid-template: repeat(8, 16px) / repeat(8, 16px);
+  image-rendering: pixelated;
+  margin: 24px auto 14px;
+}
+.px { width:16px; height:16px; }
+
+.game-title {
+  font-size: clamp(18px, 5vw, 26px);
+  color: #FFE940;
+  text-shadow: 3px 3px 0 #998000, 5px 5px 0 rgba(0,0,0,0.3);
+  text-align: center; line-height: 1.6; margin-bottom: 4px;
+}
+.game-sub {
+  font-size: 8px; color: #1a4000;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
+  margin-bottom: 10px;
+}
+.rule-box {
+  width: 100%; max-width: 340px;
+  background: rgba(0,0,0,0.5);
+  border: 3px solid #444;
+  border-top-color: #888; border-left-color: #888;
+  padding: 14px 16px;
+  font-size: 9px; color: #ddd;
+  text-shadow: 1px 1px 0 #000;
+  line-height: 2.6;
+}
+
+.mc-btn {
+  width: 100%; max-width: 300px;
+  padding: 14px 20px;
+  background: #3d7028;
+  border: none;
+  border-top: 3px solid #5aa040; border-left: 3px solid #5aa040;
+  border-bottom: 3px solid #1a3a10; border-right: 3px solid #1a3a10;
+  color: white;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px; cursor: pointer;
+  text-shadow: 2px 2px 0 #1a3a10;
+  letter-spacing: 0.5px; text-align: center;
+}
+.mc-btn:active {
+  border-top-color: #1a3a10; border-left-color: #1a3a10;
+  border-bottom-color: #5aa040; border-right-color: #5aa040;
+}
+
+/* HUD */
+#hud {
+  width: 100%; display: flex;
+  align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid #555; border-top-color: #888; border-left-color: #888;
+  padding: 8px 12px;
+}
+.hearts { display:flex; gap:4px; }
+.heart { font-size:20px; transition: filter 0.3s; }
+.heart.dead { filter: grayscale(1) opacity(0.3); }
+#score-disp { font-size:9px; color:#17dd62; text-shadow:1px 1px 0 #000; }
+
+/* Timer */
+#timer-wrap {
+  width: 100%; height: 14px;
+  background: #1a1a1a;
+  border: 2px solid #555; border-top-color: #888; border-left-color: #888;
+}
+#timer-bar { height:100%; background:#7ec832; width:100%; transition:width 0.1s linear; }
+
+/* Question box - wood planks */
+#q-panel {
+  width: 100%; padding: 16px 18px;
+  background: #c8a864;
+  border: 3px solid #9c7c3c;
+  border-top-color: #e0c080; border-left-color: #e0c080;
+  position: relative;
+}
+#q-panel::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0, transparent 13px,
+    rgba(0,0,0,0.07) 13px, rgba(0,0,0,0.07) 14px
+  );
+}
+#q-label { font-size:8px; color:#5a3800; text-shadow:1px 1px 0 #e0c080; margin-bottom:10px; }
+#q-text {
+  font-size: clamp(9px, 2.8vw, 12px);
+  color: #2a1800;
+  text-shadow: 1px 1px 0 rgba(255,220,120,0.6);
+  line-height: 1.9; white-space: pre-wrap;
+}
+
+/* Choice buttons */
+#choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+.choice-btn {
+  padding: 13px 8px; min-height: 66px;
+  background: #7a7a7a;
+  border: none;
+  border-top: 3px solid #bcbcbc; border-left: 3px solid #bcbcbc;
+  border-bottom: 3px solid #2e2e2e; border-right: 3px solid #2e2e2e;
+  color: white;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(7px, 2.2vw, 9px);
+  cursor: pointer;
+  text-shadow: 1px 1px 0 #000;
+  line-height: 1.6; text-align: center; word-break: break-all;
+}
+.choice-btn:active { filter: brightness(1.2); }
+.choice-btn.correct {
+  background: #3d7028;
+  border-top-color: #5aa040; border-left-color: #5aa040;
+  border-bottom-color: #1a3a10; border-right-color: #1a3a10;
+  animation: pop-btn 0.25s ease;
+}
+.choice-btn.wrong {
+  background: #882020;
+  border-top-color: #bb4040; border-left-color: #bb4040;
+  border-bottom-color: #440000; border-right-color: #440000;
+  animation: shake-btn 0.3s ease;
+}
+@keyframes pop-btn   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+@keyframes shake-btn { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+/* Result */
+#result-title { font-size:clamp(15px,4.5vw,20px); text-align:center; text-shadow:2px 2px 0 #000; }
+#result-score { font-size:11px; color:#17dd62; text-shadow:1px 1px 0 #000; }
+#result-detail { font-size:9px; color:#ccc; text-shadow:1px 1px 0 #000; text-align:center; white-space:pre-line; line-height:2.4; }
+
+/* Effects */
+.px-particle {
+  position: fixed; pointer-events: none;
+  image-rendering: pixelated;
+  animation: px-fly 0.9s ease-out forwards;
+  z-index: 200;
+}
+@keyframes px-fly {
+  0%   { opacity:1; transform:translate(0,0) rotate(0deg); }
+  100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--rot)); }
+}
+.pop-msg {
+  position: fixed; left:50%; top:38%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(13px,4vw,18px);
+  pointer-events: none; z-index:200;
+  text-shadow: 2px 2px 0 #000;
+  animation: pop-up 0.9s ease-out forwards;
+}
+@keyframes pop-up {
+  0%   { transform:translateX(-50%) translateY(0) scale(0.4); opacity:1; }
+  50%  { transform:translateX(-50%) translateY(-28px) scale(1.2); opacity:1; }
+  100% { transform:translateX(-50%) translateY(-60px) scale(1); opacity:0; }
+}
+#flash { position:fixed; inset:0; pointer-events:none; opacity:0; z-index:150; }
+@keyframes q-slide { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+.q-anim { animation: q-slide 0.22s ease-out; }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div id="ground"></div>
+<div id="flash"></div>
+
+<div id="wrap">
+
+  <!-- TITLE -->
+  <div id="title-screen" class="screen active">
+    <div id="creeper-art"></div>
+    <h1 class="game-title">MINECRAFT<br>QUIZ</h1>
+    <p class="game-sub">// ブロックの世界の知識を試せ！</p>
+    <div class="rule-box">
+      ❤️ ライフ 3つ ミスで1つ減る<br>
+      ⏱️ 制限時間 20秒 / 問<br>
+      💎 全10問のクイズに挑戦！<br>
+      🏆 時間が残るほど高得点！
+    </div>
+    <button class="mc-btn" id="start-btn">▶ START GAME</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-screen" class="screen">
+    <div id="hud">
+      <div class="hearts" id="hearts"></div>
+      <div id="score-disp">💎 <span id="score-num">0</span></div>
+    </div>
+    <div id="timer-wrap"><div id="timer-bar"></div></div>
+    <div id="q-panel">
+      <div id="q-label">Q1 / 10</div>
+      <div id="q-text"></div>
+    </div>
+    <div id="choices">
+      <button class="choice-btn" id="c0"></button>
+      <button class="choice-btn" id="c1"></button>
+      <button class="choice-btn" id="c2"></button>
+      <button class="choice-btn" id="c3"></button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen" class="screen">
+    <div style="height:28px"></div>
+    <p id="result-title"></p>
+    <p id="result-score" style="margin-top:10px"></p>
+    <p id="result-detail" style="margin-top:14px"></p>
+    <button class="mc-btn" id="retry-btn" style="margin-top:22px">▶ もう一度</button>
+  </div>
+
+</div>
+
+<script>
+// ── QUESTIONS ──────────────────────────────
+const POOL = [
+  { q:"木材を4つ作業台に\n並べると何ができる？",
+    c:["作業台","チェスト","かまど","本棚"], a:0 },
+  { q:"クリーパーが怖がって\n逃げる動物は？",
+    c:["オオカミ","猫","犬","羊"], a:1 },
+  { q:"スケルトンが持っている\n武器は？",
+    c:["剣","斧","弓","TNT"], a:2 },
+  { q:"ゾンビは太陽光に\n当たるとどうなる？",
+    c:["眠る","消える","強くなる","燃える"], a:3 },
+  { q:"ネザーゲートは\n何で作る？",
+    c:["石","金","黒曜石","ダイヤ"], a:2 },
+  { q:"村人との取引に\n必要なアイテムは？",
+    c:["金","ダイヤ","鉄","エメラルド"], a:3 },
+  { q:"作業台は木材\n何個で作れる？",
+    c:["1個","2個","4個","8個"], a:2 },
+  { q:"エンダードラゴンが\nいる場所は？",
+    c:["ネザー","洞窟","エンド","砂漠"], a:2 },
+  { q:"ウィザー召喚に必要な\nスケルトンの頭の数は？",
+    c:["1個","2個","3個","4個"], a:2 },
+  { q:"エンチャントを最大化する\n本棚の必要数は？",
+    c:["10個","15個","20個","25個"], a:1 },
+  { q:"TNTを着火させる\nアイテムは？",
+    c:["松明","弓","木の棒","火打ち石と打ち金"], a:3 },
+  { q:"エンダーパールを\n投げると？",
+    c:["爆発する","テレポートできる","敵を倒せる","金になる"], a:1 },
+  { q:"ダイヤモンドが最も\n生成されやすい高さは？\n(ver1.18以降)",
+    c:["Y=12","Y=-16","Y=-58","Y=-80"], a:2 },
+  { q:"エンダードラゴンの\nHPは？",
+    c:["100","150","200","300"], a:2 },
+  { q:"マイクラJava版の\n初リリース年は？",
+    c:["2007年","2009年","2011年","2013年"], a:1 },
+  { q:"ウィザーのHP\n(Java版)は？",
+    c:["100","200","300","600"], a:2 },
+  { q:"シュルカーボックスの\nスロット数は？",
+    c:["18","27","36","54"], a:1 },
+  { q:"マイクラを作った\nNotchの本名は？",
+    c:["マーカス・ペルソン","ジェブ・ベルゲンステン","スコット・チェン","ライアン・ホルツ"], a:0 },
+  { q:"ネザライトの\n材料は？",
+    c:["金+ネザーラック","古代の残骸+金インゴット","ダイヤ+ネザーラック","ブレイズロッド+金"], a:1 },
+  { q:"エンダーマンの\n身長は？（ブロック換算）",
+    c:["2個分","2.5個分","3個分","3.5個分"], a:2 },
+];
+
+const GAME_LEN = 10, MAX_HP = 3, Q_TIME = 20;
+
+// ── STATE ──────────────────────────────────
+let questions=[], qIdx=0, lives=MAX_HP, score=0, correct=0, locked=false, timerID=null, timeLeft=0;
+
+// ── AUDIO ──────────────────────────────────
+let actx=null;
+const ac = () => actx||(actx=new(window.AudioContext||window.webkitAudioContext)());
+function beep(f,t,d,v=0.18){
+  const ctx=ac(),o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.type=t;o.frequency.value=f;
+  g.gain.setValueAtTime(v,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d);
+  o.start();o.stop(ctx.currentTime+d);
+}
+const sfx={
+  click:   ()=>beep(220,'square',0.06,0.08),
+  correct: ()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,'square',0.14,0.18),i*75)),
+  wrong:   ()=>beep(155,'sawtooth',0.45,0.22),
+  clear:   ()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,'sine',0.22,0.20),i*100)),
+  gameover:()=>[440,330,220,110].forEach((f,i)=>setTimeout(()=>beep(f,'sawtooth',0.3,0.20),i*140)),
+};
+
+// ── DOM ────────────────────────────────────
+const $=id=>document.getElementById(id);
+const titleScr=$('title-screen'), quizScr=$('quiz-screen'), resultScr=$('result-screen');
+const heartsEl=$('hearts'), scoreNum=$('score-num'), qLabel=$('q-label'), qTextEl=$('q-text');
+const qPanel=$('q-panel'), timerBar=$('timer-bar'), flash=$('flash');
+const cBtns=[0,1,2,3].map(i=>$('c'+i));
+
+function showScreen(s){
+  [titleScr,quizScr,resultScr].forEach(x=>x.classList.remove('active'));
+  s.classList.add('active');
+}
+
+// ── UTILS ──────────────────────────────────
+function shuffle(a){
+  const b=[...a];
+  for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}
+  return b;
+}
+function doFlash(color){
+  flash.style.background=color;flash.style.transition='none';flash.style.opacity='0.45';
+  setTimeout(()=>{flash.style.transition='opacity 0.4s';flash.style.opacity='0';},80);
+}
+function spawnPixels(ok){
+  const cols=ok?['#5a9e3a','#17dd62','#FFE940','#fff','#3d7028']:['#882020','#cc4444','#ff8888','#553030'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div');
+    p.className='px-particle';
+    const s=7+Math.random()*11, ang=Math.random()*Math.PI*2, d=70+Math.random()*130;
+    p.style.cssText=`width:${s}px;height:${s}px;left:50%;top:45%;background:${cols[0|Math.random()*cols.length]};--dx:${Math.cos(ang)*d}px;--dy:${Math.sin(ang)*d-60}px;--rot:${Math.random()*360}deg;`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),950);
+  }
+}
+function showPop(text,color){
+  const el=document.createElement('div');
+  el.className='pop-msg';el.textContent=text;el.style.color=color;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+function updateHearts(){
+  heartsEl.innerHTML='';
+  for(let i=0;i<MAX_HP;i++){
+    const h=document.createElement('span');
+    h.className='heart'+(i>=lives?' dead':'');
+    h.textContent='❤️';
+    heartsEl.appendChild(h);
+  }
+}
+
+// ── GAME ───────────────────────────────────
+function startGame(){
+  questions=shuffle(POOL).slice(0,GAME_LEN);
+  qIdx=0;lives=MAX_HP;score=0;correct=0;
+  scoreNum.textContent='0';
+  updateHearts();
+  showScreen(quizScr);
+  nextQuestion();
+}
+
+function nextQuestion(){
+  locked=false;clearInterval(timerID);
+  if(lives<=0){endGame(false);return;}
+  if(qIdx>=GAME_LEN){endGame(true);return;}
+
+  const q=questions[qIdx];
+  qLabel.textContent=`Q${qIdx+1} / ${GAME_LEN}`;
+  qTextEl.textContent=q.q;
+  qPanel.classList.remove('q-anim');
+  void qPanel.offsetWidth;
+  qPanel.classList.add('q-anim');
+
+  const data=shuffle(q.c.map((txt,i)=>({txt,ok:i===q.a})));
+  cBtns.forEach((btn,i)=>{
+    btn.textContent=data[i].txt;
+    btn.dataset.ok=data[i].ok?'1':'0';
+    btn.className='choice-btn';
+    btn.disabled=false;
+  });
+
+  timeLeft=Q_TIME;
+  timerBar.style.width='100%';timerBar.style.background='#7ec832';
+  timerID=setInterval(()=>{
+    timeLeft-=0.1;
+    const p=Math.max(0,timeLeft/Q_TIME*100);
+    timerBar.style.width=p+'%';
+    if(p<50)timerBar.style.background='#e0a000';
+    if(p<25)timerBar.style.background='#cc2222';
+    if(timeLeft<=0){clearInterval(timerID);onTimeout();}
+  },100);
+}
+
+function onAnswer(btn){
+  if(locked)return;
+  locked=true;clearInterval(timerID);sfx.click();
+  const ok=btn.dataset.ok==='1';
+  cBtns.forEach(b=>{b.disabled=true;if(b.dataset.ok==='1')b.classList.add('correct');});
+  if(!ok)btn.classList.add('wrong');
+  if(ok){
+    correct++;
+    const bonus=Math.floor(timeLeft*10);
+    score+=100+bonus;
+    scoreNum.textContent=score;
+    sfx.correct();doFlash('#17dd62');spawnPixels(true);showPop('正解！ +' +(100+bonus),'#17dd62');
+  } else {
+    lives--;updateHearts();
+    sfx.wrong();doFlash('#cc2222');spawnPixels(false);showPop('ミス！','#ff4444');
+  }
+  setTimeout(()=>{qIdx++;nextQuestion();},1300);
+}
+
+function onTimeout(){
+  if(locked)return;
+  locked=true;lives--;updateHearts();
+  cBtns.forEach(b=>{b.disabled=true;if(b.dataset.ok==='1')b.classList.add('correct');});
+  sfx.wrong();doFlash('#884400');spawnPixels(false);showPop('時間切れ！','#ffaa00');
+  setTimeout(()=>{qIdx++;nextQuestion();},1300);
+}
+
+function endGame(cleared){
+  clearInterval(timerID);showScreen(resultScr);
+  $('result-title').textContent=cleared?'🎉 MISSION CLEAR！':'💀 GAME OVER';
+  $('result-title').style.color=cleared?'#FFE940':'#ff4444';
+  $('result-score').textContent='💎 スコア: '+score;
+  $('result-detail').textContent=`正解数: ${correct} / ${GAME_LEN}\n❤️ 残りライフ: ${lives}`;
+  cleared?sfx.clear():sfx.gameover();
+}
+
+// ── EVENTS ─────────────────────────────────
+$('start-btn').addEventListener('click',()=>{sfx.click();startGame();});
+$('retry-btn').addEventListener('click',()=>{sfx.click();startGame();});
+cBtns.forEach(b=>b.addEventListener('click',()=>onAnswer(b)));
+
+// ── CREEPER PIXEL ART ──────────────────────
+(()=>{
+  const G='#5a9e3a',g='#3d7028',B='#1a1a1a';
+  const rows=[
+    [G,G,G,G,G,G,G,G],
+    [G,G,G,G,G,G,G,G],
+    [G,B,B,G,G,B,B,G],
+    [G,B,B,G,G,B,B,G],
+    [G,G,G,B,B,G,G,G],
+    [G,G,B,B,B,B,G,G],
+    [G,G,B,B,B,B,G,G],
+    [G,G,B,G,G,B,G,G],
+  ];
+  const el=$('creeper-art');
+  rows.forEach(row=>row.forEach(col=>{
+    const px=document.createElement('div');
+    px.className='px';px.style.background=col;
+    el.appendChild(px);
+  }));
+})();
+
+// ── CLOUDS ─────────────────────────────────
+function spawnCloud(){
+  const sizes=[[60,16],[40,12],[80,14],[50,10]];
+  const [bw,bh]=sizes[0|Math.random()*sizes.length];
+  const top=5+Math.random()*28;
+  const dur=22+Math.random()*20;
+  const startX=-(bw+100);
+  // Main block
+  const make=(w,h,x,y)=>{
+    const c=document.createElement('div');
+    c.className='cloud-block';
+    c.style.cssText=`width:${w}px;height:${h}px;top:calc(${top}% + ${y}px);left:${startX+x}px;animation-duration:${dur}s;`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),dur*1000);
+  };
+  make(bw,bh,0,0);
+  make(bw*0.6,bh,bw*0.2,-bh*0.8);
+  make(bw*0.5,bh,bw*0.55,-bh*0.5);
+}
+spawnCloud();
+setInterval(spawnCloud,8000);
+</script>
+</body>
+</html>
