@@ -103,6 +103,45 @@ body {
   border-bottom-color: #5aa040; border-right-color: #5aa040;
 }
 
+/* Difficulty selection */
+.diff-title {
+  font-size: 10px; color: #FFE940;
+  text-shadow: 2px 2px 0 #000;
+  margin: 20px 0 8px;
+  text-align: center;
+}
+.diff-btn {
+  width: 100%; max-width: 320px;
+  padding: 14px 18px;
+  border: none; cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px; color: white;
+  text-shadow: 2px 2px 0 #000;
+  letter-spacing: 0.5px; text-align: center;
+  line-height: 1;
+}
+.diff-btn .diff-sub {
+  display: block; font-size: 7px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 8px; line-height: 1;
+}
+.diff-btn:active { filter: brightness(1.3); }
+.diff-btn.easy {
+  background: #2d6e1a;
+  border-top: 3px solid #5aa040; border-left: 3px solid #5aa040;
+  border-bottom: 3px solid #0e3008; border-right: 3px solid #0e3008;
+}
+.diff-btn.normal {
+  background: #7a6010;
+  border-top: 3px solid #c8a030; border-left: 3px solid #c8a030;
+  border-bottom: 3px solid #3a2a00; border-right: 3px solid #3a2a00;
+}
+.diff-btn.hard {
+  background: #7a1a1a;
+  border-top: 3px solid #cc4040; border-left: 3px solid #cc4040;
+  border-bottom: 3px solid #3a0000; border-right: 3px solid #3a0000;
+}
+
 /* HUD */
 #hud {
   width: 100%; display: flex;
@@ -114,6 +153,11 @@ body {
 .hearts { display:flex; gap:4px; }
 .heart { font-size:20px; transition: filter 0.3s; }
 .heart.dead { filter: grayscale(1) opacity(0.3); }
+#diff-badge {
+  font-size: 7px; padding: 3px 7px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid currentColor;
+}
 #score-disp { font-size:9px; color:#17dd62; text-shadow:1px 1px 0 #000; }
 
 /* Timer */
@@ -228,18 +272,37 @@ body {
     <h1 class="game-title">MINECRAFT<br>QUIZ</h1>
     <p class="game-sub">// ブロックの世界の知識を試せ！</p>
     <div class="rule-box">
-      ❤️ ライフ 3つ ミスで1つ減る<br>
-      ⏱️ 制限時間 20秒 / 問<br>
+      ❤️ ライフ制（ミスで1つ減る）<br>
+      ⏱️ 制限時間あり（難易度で変わる）<br>
       💎 全10問のクイズに挑戦！<br>
       🏆 時間が残るほど高得点！
     </div>
     <button class="mc-btn" id="start-btn">▶ START GAME</button>
   </div>
 
+  <!-- DIFFICULTY SELECT -->
+  <div id="diff-screen" class="screen">
+    <p class="diff-title">難易度を選んでください</p>
+    <button class="diff-btn easy" id="diff-easy">
+      🌱 かんたん
+      <span class="diff-sub">制限時間 25秒　ライフ ❤️❤️❤️</span>
+    </button>
+    <button class="diff-btn normal" id="diff-normal">
+      ⚔️ ふつう
+      <span class="diff-sub">制限時間 20秒　ライフ ❤️❤️❤️</span>
+    </button>
+    <button class="diff-btn hard" id="diff-hard">
+      💀 むずかしい
+      <span class="diff-sub">制限時間 15秒　ライフ ❤️❤️</span>
+    </button>
+    <button class="mc-btn" id="back-btn" style="font-size:9px;padding:10px 20px;max-width:200px">◀ もどる</button>
+  </div>
+
   <!-- QUIZ -->
   <div id="quiz-screen" class="screen">
     <div id="hud">
       <div class="hearts" id="hearts"></div>
+      <div id="diff-badge"></div>
       <div id="score-disp">💎 <span id="score-num">0</span></div>
     </div>
     <div id="timer-wrap"><div id="timer-bar"></div></div>
@@ -268,7 +331,8 @@ body {
 
 <script>
 // ── QUESTIONS ──────────────────────────────
-const POOL = [
+
+const EASY_POOL = [
   { q:"木材を4つ作業台に\n並べると何ができる？",
     c:["作業台","チェスト","かまど","本棚"], a:0 },
   { q:"クリーパーが怖がって\n逃げる動物は？",
@@ -281,40 +345,133 @@ const POOL = [
     c:["石","金","黒曜石","ダイヤ"], a:2 },
   { q:"村人との取引に\n必要なアイテムは？",
     c:["金","ダイヤ","鉄","エメラルド"], a:3 },
-  { q:"作業台は木材\n何個で作れる？",
-    c:["1個","2個","4個","8個"], a:2 },
   { q:"エンダードラゴンが\nいる場所は？",
     c:["ネザー","洞窟","エンド","砂漠"], a:2 },
+  { q:"TNTを着火させる\nアイテムは？",
+    c:["松明","弓","木の棒","火打ち石と打ち金"], a:3 },
+  { q:"木材を2つ縦に\n並べると何になる？",
+    c:["棒","板","竹","矢"], a:0 },
+  { q:"砂を焼くと\n何になる？",
+    c:["砂岩","ガラス","石","粘土"], a:1 },
+  { q:"パンを作るのに\n必要な材料は？",
+    c:["小麦×2","小麦×3","小麦×4","種×3"], a:1 },
+  { q:"羊から羊毛を\n取るアイテムは？",
+    c:["剣","斧","ハサミ","クワ"], a:2 },
+  { q:"石を採掘するのに\n必要なツールは？",
+    c:["斧","クワ","シャベル","つるはし"], a:3 },
+  { q:"ベッドに入ると\n何ができる？",
+    c:["テレポート","夜を飛ばせる","体力が増える","空腹回復"], a:1 },
+  { q:"砂糖の\n原料は？",
+    c:["麦","砂","サトウキビ","花"], a:2 },
+  { q:"エンダーパールを\n投げると？",
+    c:["爆発する","テレポートできる","敵を倒せる","金になる"], a:1 },
+  { q:"草ブロックを\n壊すと何が出る？",
+    c:["砂","草","土","石"], a:2 },
+  { q:"松明の\n材料は？",
+    c:["木材+石炭","棒+石炭","木材+砂","棒+砂"], a:1 },
+  { q:"ニワトリを倒すと\n必ず落とすものは？",
+    c:["牛乳","羊毛","羽根","絹"], a:2 },
+  { q:"丸石はどうやって\n入手する？",
+    c:["石を手で壊す","砂を焼く","石をつるはしで壊す","土を掘る"], a:2 },
+];
+
+const NORMAL_POOL = [
   { q:"ウィザー召喚に必要な\nスケルトンの頭の数は？",
     c:["1個","2個","3個","4個"], a:2 },
   { q:"エンチャントを最大化する\n本棚の必要数は？",
     c:["10個","15個","20個","25個"], a:1 },
-  { q:"TNTを着火させる\nアイテムは？",
-    c:["松明","弓","木の棒","火打ち石と打ち金"], a:3 },
-  { q:"エンダーパールを\n投げると？",
-    c:["爆発する","テレポートできる","敵を倒せる","金になる"], a:1 },
-  { q:"ダイヤモンドが最も\n生成されやすい高さは？\n(ver1.18以降)",
+  { q:"ダイヤモンドが最も\n多い高さは？\n(ver1.18以降)",
     c:["Y=12","Y=-16","Y=-58","Y=-80"], a:2 },
-  { q:"エンダードラゴンの\nHPは？",
-    c:["100","150","200","300"], a:2 },
   { q:"マイクラJava版の\n初リリース年は？",
     c:["2007年","2009年","2011年","2013年"], a:1 },
+  { q:"マイクラを作った\nNotchの本名は？",
+    c:["マーカス・ペルソン","ジェブ・ベルゲンステン","スコット・チェン","ライアン・ホルツ"], a:0 },
+  { q:"エンダードラゴンの\nHPは？",
+    c:["100","150","200","300"], a:2 },
   { q:"ウィザーのHP\n(Java版)は？",
     c:["100","200","300","600"], a:2 },
   { q:"シュルカーボックスの\nスロット数は？",
     c:["18","27","36","54"], a:1 },
-  { q:"マイクラを作った\nNotchの本名は？",
-    c:["マーカス・ペルソン","ジェブ・ベルゲンステン","スコット・チェン","ライアン・ホルツ"], a:0 },
   { q:"ネザライトの\n材料は？",
     c:["金+ネザーラック","古代の残骸+金インゴット","ダイヤ+ネザーラック","ブレイズロッド+金"], a:1 },
   { q:"エンダーマンの\n身長は？（ブロック換算）",
     c:["2個分","2.5個分","3個分","3.5個分"], a:2 },
+  { q:"ブレイズを倒すと\n落とすアイテムは？",
+    c:["ネザーラック","ブレイズロッド","エンダーパール","ゴーストの涙"], a:1 },
+  { q:"クリーパーをスケルトンが\n倒すと何が落ちる？",
+    c:["ダイヤ","エメラルド","ミュージックディスク","火薬"], a:2 },
+  { q:"醸造台の\n材料は？",
+    c:["ブレイズロッド+丸石3","溶岩+丸石3","火薬+丸石3","レッドストーン+丸石3"], a:0 },
+  { q:"ポーション作りの\n基本材料は？",
+    c:["砂糖","ネザーウォート","スイカのかけら","グロウストーン"], a:1 },
+  { q:"アイアンゴーレムは\n何で作る？",
+    c:["金ブロック4+かぼちゃ","鉄ブロック4+かぼちゃ","ダイヤブロック4+かぼちゃ","石ブロック4+かぼちゃ"], a:1 },
+  { q:"コンパスが\n指す方向は？",
+    c:["北","東","ワールドスポーン","磁北"], a:2 },
+  { q:"ビーコン1層(最小)に\n必要なブロック数は？",
+    c:["4個","9個","16個","25個"], a:1 },
+  { q:"スライムが湧く\n特殊バイオームは？",
+    c:["砂漠","沼地","ジャングル","雪原"], a:1 },
+  { q:"馬に乗るときに\n必要なアイテムは？",
+    c:["手綱","サドル","リンゴ","ニンジン"], a:1 },
+  { q:"ドラゴンブレスの\n使い道は？",
+    c:["残留ポーション作成","エンチャント強化","ビーコン起動","村人交易"], a:0 },
 ];
 
-const GAME_LEN = 10, MAX_HP = 3, Q_TIME = 20;
+const HARD_POOL = [
+  { q:"ウィザーがHPの\n半分を切ると\n発動するのは？",
+    c:["スピードアップ","飛び道具無効化","分裂する","爆発強化"], a:1 },
+  { q:"エンダードラゴンを\n復活させるために\n必要なものは？",
+    c:["エンドクリスタル×4","エンドクリスタル×8","エンダーパール×16","ドラゴンエッグ×1"], a:0 },
+  { q:"ネザーの1ブロックは\nオーバーワールドの\n何ブロック相当？",
+    c:["4ブロック","6ブロック","8ブロック","10ブロック"], a:2 },
+  { q:"チャンクの\nXZサイズは？",
+    c:["8×8ブロック","16×16ブロック","32×32ブロック","64×64ブロック"], a:1 },
+  { q:"エメラルド鉱石が\n生成されるバイオームは？",
+    c:["砂漠","沼地","山岳系","ジャングル"], a:2 },
+  { q:"ファントムは何日間\n眠らないと出現する？",
+    c:["1日","2日","3日","5日"], a:2 },
+  { q:"ゾンビが村人を\n感染させる確率\n(Normal難易度)は？",
+    c:["0%","25%","50%","100%"], a:2 },
+  { q:"光源ブロックの\n最大明るさレベルは？",
+    c:["12","14","15","16"], a:2 },
+  { q:"アーマースタンドの\n材料は？",
+    c:["棒6+石の平板","棒5+石の平板","棒6+木の平板","棒4+石の平板"], a:0 },
+  { q:"Java1.18以降の\n最も深いレベルは？",
+    c:["Y=-32","Y=-48","Y=-64","Y=-128"], a:2 },
+  { q:"マイクラJava版の\nフルリリース(1.0)は\n何年？",
+    c:["2010年","2011年","2012年","2013年"], a:1 },
+  { q:"エンダーチェストの\nスロット数は？",
+    c:["18","27","36","54"], a:1 },
+  { q:"コマンドブロックを\n入手するコマンドは？",
+    c:["/give @s command_block","/get command_block","/spawn command_block","/drop command_block"], a:0 },
+  { q:"ガストの火の玉を\n打ち返すのに\n使えるものは？",
+    c:["素手のみ","剣のみ","弓のみ","素手・剣・矢など"], a:3 },
+  { q:"スノーゴーレムは\n何から作る？",
+    c:["雪ブロック2+かぼちゃ","氷ブロック2+かぼちゃ","雪ブロック3+かぼちゃ","雪ブロック1+かぼちゃ"], a:0 },
+  { q:"村の建物デザインを\n決定するのは？",
+    c:["シード値","難易度","バイオーム","時間帯"], a:2 },
+  { q:"ビーコンの最大\n効果範囲は？\n(4層ピラミッド)",
+    c:["20ブロック","30ブロック","40ブロック","50ブロック"], a:3 },
+  { q:"レッドストーン信号の\n最大伝達距離は？",
+    c:["8ブロック","12ブロック","15ブロック","20ブロック"], a:2 },
+  { q:"エンドシップで\n入手できる装備品は？",
+    c:["ダイヤの胸当て","エリトラ","ネザライト胸当て","シュルカーシェル"], a:1 },
+  { q:"ネザー水晶(クォーツ)で\n作れるレッドストーン\n部品は？",
+    c:["リピーター","コンパレーター","観察者","ピストン"], a:1 },
+];
+
+const DIFF_SETTINGS = {
+  easy:   { pool: EASY_POOL,   time: 25, lives: 3, label: '🌱 かんたん', color: '#5aa040' },
+  normal: { pool: NORMAL_POOL, time: 20, lives: 3, label: '⚔️ ふつう',   color: '#c8a030' },
+  hard:   { pool: HARD_POOL,   time: 15, lives: 2, label: '💀 むずかしい', color: '#cc4040' },
+};
+
+const GAME_LEN = 10;
 
 // ── STATE ──────────────────────────────────
-let questions=[], qIdx=0, lives=MAX_HP, score=0, correct=0, locked=false, timerID=null, timeLeft=0;
+let questions=[], qIdx=0, lives=3, score=0, correct=0, locked=false, timerID=null, timeLeft=0;
+let currentDiff='normal', Q_TIME=20, MAX_HP=3;
 
 // ── AUDIO ──────────────────────────────────
 let actx=null;
@@ -337,13 +494,14 @@ const sfx={
 
 // ── DOM ────────────────────────────────────
 const $=id=>document.getElementById(id);
-const titleScr=$('title-screen'), quizScr=$('quiz-screen'), resultScr=$('result-screen');
+const titleScr=$('title-screen'), diffScr=$('diff-screen');
+const quizScr=$('quiz-screen'), resultScr=$('result-screen');
 const heartsEl=$('hearts'), scoreNum=$('score-num'), qLabel=$('q-label'), qTextEl=$('q-text');
 const qPanel=$('q-panel'), timerBar=$('timer-bar'), flash=$('flash');
 const cBtns=[0,1,2,3].map(i=>$('c'+i));
 
 function showScreen(s){
-  [titleScr,quizScr,resultScr].forEach(x=>x.classList.remove('active'));
+  [titleScr,diffScr,quizScr,resultScr].forEach(x=>x.classList.remove('active'));
   s.classList.add('active');
 }
 
@@ -385,8 +543,22 @@ function updateHearts(){
 }
 
 // ── GAME ───────────────────────────────────
+function chooseDiff(diff){
+  sfx.click();
+  currentDiff = diff;
+  const s = DIFF_SETTINGS[diff];
+  Q_TIME = s.time;
+  MAX_HP = s.lives;
+  // update badge
+  const badge = $('diff-badge');
+  badge.textContent = s.label;
+  badge.style.color = s.color;
+  startGame();
+}
+
 function startGame(){
-  questions=shuffle(POOL).slice(0,GAME_LEN);
+  const s = DIFF_SETTINGS[currentDiff];
+  questions=shuffle(s.pool).slice(0,GAME_LEN);
   qIdx=0;lives=MAX_HP;score=0;correct=0;
   scoreNum.textContent='0';
   updateHearts();
@@ -455,16 +627,21 @@ function onTimeout(){
 
 function endGame(cleared){
   clearInterval(timerID);showScreen(resultScr);
+  const s = DIFF_SETTINGS[currentDiff];
   $('result-title').textContent=cleared?'🎉 MISSION CLEAR！':'💀 GAME OVER';
   $('result-title').style.color=cleared?'#FFE940':'#ff4444';
   $('result-score').textContent='💎 スコア: '+score;
-  $('result-detail').textContent=`正解数: ${correct} / ${GAME_LEN}\n❤️ 残りライフ: ${lives}`;
+  $('result-detail').textContent=`難易度: ${s.label}\n正解数: ${correct} / ${GAME_LEN}\n❤️ 残りライフ: ${lives}`;
   cleared?sfx.clear():sfx.gameover();
 }
 
 // ── EVENTS ─────────────────────────────────
-$('start-btn').addEventListener('click',()=>{sfx.click();startGame();});
-$('retry-btn').addEventListener('click',()=>{sfx.click();startGame();});
+$('start-btn').addEventListener('click',()=>{sfx.click();showScreen(diffScr);});
+$('back-btn').addEventListener('click',()=>{sfx.click();showScreen(titleScr);});
+$('diff-easy').addEventListener('click',()=>chooseDiff('easy'));
+$('diff-normal').addEventListener('click',()=>chooseDiff('normal'));
+$('diff-hard').addEventListener('click',()=>chooseDiff('hard'));
+$('retry-btn').addEventListener('click',()=>{sfx.click();showScreen(diffScr);});
 cBtns.forEach(b=>b.addEventListener('click',()=>onAnswer(b)));
 
 // ── CREEPER PIXEL ART ──────────────────────
@@ -495,7 +672,6 @@ function spawnCloud(){
   const top=5+Math.random()*28;
   const dur=22+Math.random()*20;
   const startX=-(bw+100);
-  // Main block
   const make=(w,h,x,y)=>{
     const c=document.createElement('div');
     c.className='cloud-block';
