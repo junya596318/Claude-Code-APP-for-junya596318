@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プレゼントゲーム🎁</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .screen {
+    display: none;
+    text-align: center;
+    padding: 30px 20px;
+    max-width: 500px;
+    width: 100%;
+  }
+  .screen.active { display: block; }
+
+  h1 { font-size: 2rem; margin-bottom: 10px; }
+  p  { font-size: 1rem; color: #ccc; line-height: 1.6; }
+
+  button {
+    margin-top: 20px;
+    padding: 14px 36px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #e94560, #f5a623);
+    color: white;
+    font-weight: bold;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 20px rgba(233,69,96,.4);
+  }
+  button:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(233,69,96,.6); }
+
+  /* ===== GAME SCREEN ===== */
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  #score-display { color: #f5a623; }
+  #timer-display { color: #e94560; }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 16px;
+    background: rgba(255,255,255,.07);
+    border: 2px solid rgba(255,255,255,.1);
+    font-size: 2.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .1s, background .1s;
+    user-select: none;
+  }
+  .cell:hover { background: rgba(255,255,255,.12); }
+  .cell.target {
+    background: rgba(255,200,50,.15);
+    border-color: #f5a623;
+    animation: pulse .6s infinite alternate;
+  }
+  .cell.hit {
+    background: rgba(233,69,96,.3);
+    border-color: #e94560;
+    transform: scale(.92);
+  }
+  @keyframes pulse {
+    from { box-shadow: 0 0 0 0 rgba(245,166,35,.4); }
+    to   { box-shadow: 0 0 0 10px rgba(245,166,35,0); }
+  }
+
+  #progress-bar-wrap {
+    margin-top: 16px;
+    background: rgba(255,255,255,.1);
+    border-radius: 50px;
+    height: 10px;
+    overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #f5a623);
+    border-radius: 50px;
+    transition: width .1s linear;
+    width: 100%;
+  }
+
+  /* ===== CLEAR SCREEN ===== */
+  #clear-screen {
+    background: rgba(255,255,255,.05);
+    border-radius: 24px;
+    padding: 40px 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.1);
+  }
+  .trophy { font-size: 4rem; margin-bottom: 10px; }
+  .final-score { font-size: 3rem; font-weight: bold; color: #f5a623; margin: 10px 0; }
+
+  .gift-reveal {
+    margin-top: 28px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(233,69,96,.2), rgba(245,166,35,.2));
+    border-radius: 16px;
+    border: 1px solid rgba(245,166,35,.4);
+  }
+  .gift-reveal h2 { font-size: 1.3rem; margin-bottom: 12px; }
+
+  .code-box {
+    background: rgba(0,0,0,.4);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 1.4rem;
+    letter-spacing: .15em;
+    color: #f5a623;
+    border: 2px dashed rgba(245,166,35,.5);
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+    word-break: break-all;
+  }
+  .code-box:hover { background: rgba(0,0,0,.6); }
+  .copy-hint {
+    font-size: .75rem;
+    color: #888;
+    margin-top: 6px;
+  }
+  .copied-msg {
+    display: none;
+    color: #4caf50;
+    font-size: .85rem;
+    margin-top: 4px;
+  }
+
+  /* confetti canvas */
+  #confetti-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- START SCREEN -->
+<div id="start-screen" class="screen active">
+  <div style="font-size:4rem">🎁</div>
+  <h1 style="margin-top:10px">プレゼントゲーム</h1>
+  <p style="margin-top:14px">
+    30秒間、光るパネルをタップ！<br>
+    <strong style="color:#f5a623">20点</strong> 以上取るとサプライズがもらえるよ🎉
+  </p>
+  <button onclick="startGame()">ゲームスタート！</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div id="hud">
+    <span>⭐ スコア: <span id="score-display">0</span></span>
+    <span>⏱ <span id="timer-display">30</span>秒</span>
+  </div>
+  <div id="grid"></div>
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+</div>
+
+<!-- CLEAR SCREEN -->
+<div id="clear-screen" class="screen">
+  <div class="trophy">🏆</div>
+  <h1>クリア！</h1>
+  <div class="final-score" id="final-score-text">0点</div>
+  <p>おめでとう！🎊 ご褒美があるよ！</p>
+
+  <div class="gift-reveal">
+    <h2>🎁 Amazonギフトカード</h2>
+    <p style="color:#ccc;font-size:.9rem">下のコードをコピーしてAmazonで使ってね！</p>
+    <div class="code-box" id="gift-code" onclick="copyCode()">
+      <!-- ↓↓↓ ここにAmazonギフトカードのコードを入れてね ↓↓↓ -->
+      XXXX-XXXXXX-XXXX
+      <!-- ↑↑↑ ここにAmazonギフトカードのコードを入れてね ↑↑↑ -->
+    </div>
+    <div class="copy-hint">タップでコピー</div>
+    <div class="copied-msg" id="copied-msg">✅ コピーしました！</div>
+  </div>
+  <button onclick="location.reload()">もう一度遊ぶ</button>
+</div>
+
+<!-- FAIL SCREEN -->
+<div id="fail-screen" class="screen">
+  <div style="font-size:3.5rem">😢</div>
+  <h1 style="margin-top:10px">もう少し！</h1>
+  <div class="final-score" id="fail-score-text">0点</div>
+  <p>20点以上でサプライズ解放！<br>もう一回チャレンジしてみて！</p>
+  <button onclick="location.reload()">リトライ！</button>
+</div>
+
+<script>
+const GOAL  = 20;
+const TIME  = 30;
+const COLS  = 4;
+const ROWS  = 4;
+const TOTAL = COLS * ROWS;
+
+let score = 0, timeLeft = TIME, gameActive = false;
+let targetIdx = -1, targetTimer, countdownTimer;
+let cells = [];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  cells = [];
+  for (let i = 0; i < TOTAL; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.idx = i;
+    cell.textContent = '';
+    cell.addEventListener('click', () => hitCell(i));
+    grid.appendChild(cell);
+    cells.push(cell);
+  }
+}
+
+function startGame() {
+  score = 0; timeLeft = TIME; gameActive = true;
+  showScreen('game-screen');
+  buildGrid();
+  updateHUD();
+  updateProgressBar();
+  scheduleTarget();
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    updateHUD();
+    updateProgressBar();
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function scheduleTarget() {
+  if (!gameActive) return;
+  clearTimeout(targetTimer);
+  if (targetIdx >= 0) {
+    cells[targetIdx].classList.remove('target');
+    cells[targetIdx].textContent = '';
+  }
+  targetIdx = Math.floor(Math.random() * TOTAL);
+  cells[targetIdx].classList.add('target');
+  cells[targetIdx].textContent = ['⭐','💫','✨','🌟','🎯'][Math.floor(Math.random()*5)];
+
+  const delay = Math.max(500, 1200 - score * 25);
+  targetTimer = setTimeout(() => {
+    if (gameActive) {
+      cells[targetIdx].classList.remove('target');
+      cells[targetIdx].textContent = '';
+      scheduleTarget();
+    }
+  }, delay);
+}
+
+function hitCell(idx) {
+  if (!gameActive || idx !== targetIdx) return;
+  cells[idx].classList.remove('target');
+  cells[idx].classList.add('hit');
+  cells[idx].textContent = '💥';
+  setTimeout(() => {
+    cells[idx].classList.remove('hit');
+    cells[idx].textContent = '';
+  }, 200);
+  score++;
+  updateHUD();
+  scheduleTarget();
+}
+
+function updateHUD() {
+  document.getElementById('score-display').textContent = score;
+  document.getElementById('timer-display').textContent = timeLeft;
+}
+function updateProgressBar() {
+  document.getElementById('progress-bar').style.width = (timeLeft / TIME * 100) + '%';
+}
+
+function endGame() {
+  gameActive = false;
+  clearInterval(countdownTimer);
+  clearTimeout(targetTimer);
+  if (targetIdx >= 0) {
+    cells[targetIdx].classList.remove('target');
+    cells[targetIdx].textContent = '';
+  }
+
+  if (score >= GOAL) {
+    document.getElementById('final-score-text').textContent = score + '点！';
+    showScreen('clear-screen');
+    launchConfetti();
+  } else {
+    document.getElementById('fail-score-text').textContent = score + '点';
+    showScreen('fail-screen');
+  }
+}
+
+function copyCode() {
+  const code = document.getElementById('gift-code').textContent.trim();
+  navigator.clipboard.writeText(code).then(() => {
+    const msg = document.getElementById('copied-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  });
+}
+
+/* ---- confetti ---- */
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const particles = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: -10,
+    r: Math.random() * 7 + 4,
+    color: ['#f5a623','#e94560','#4caf50','#2196f3','#ff69b4','#fff'][Math.floor(Math.random()*6)],
+    vx: (Math.random() - .5) * 3,
+    vy: Math.random() * 3 + 2,
+    rot: Math.random() * 360,
+    rotV: (Math.random() - .5) * 6,
+  }));
+  let frame;
+  (function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+      if (p.y < canvas.height + 10) alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+      ctx.restore();
+    }
+    if (alive) frame = requestAnimationFrame(animate);
+  })();
+  setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0, 0, canvas.width, canvas.height); }, 4000);
+}
+</script>
+</body>
+</html>
