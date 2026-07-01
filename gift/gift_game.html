@@ -2,270 +2,251 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ギフトクエスト ⚔️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a1a3a">
+<title>誕生日お祝いクエスト 🎂</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   :root {
     --dq-blue: #0a1a3a;
-    --win-bg: #000;
+    --win-bg: #06122c;
     --win-border: #fff;
-    --accent: #f5a623;
-    --hp: #4caf50;
-    --hp-low: #e94560;
-    --mp: #2196f3;
+    --accent: #ffcf4d;
+    --hp: #ff4d5e;      /* HP = 赤 */
+    --hp-low: #ff2038;
+    --mp: #3aa0ff;      /* MP = 青 */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   body {
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', 'Hiragino Kaku Gothic ProN', monospace;
     background: #000;
-    min-height: 100vh;
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     -webkit-font-smoothing: none;
-    image-rendering: pixelated;
-    overflow: hidden;
   }
 
   #app {
     width: 100%;
-    max-width: 480px;
-    padding: 12px;
+    max-width: 460px;
+    height: 100dvh;
+    max-height: 900px;
+    padding: calc(8px + var(--safe-top)) 10px calc(8px + var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
-  .screen { display: none; }
-  .screen.active { display: block; }
+  .screen { display: none; flex: 1; flex-direction: column; justify-content: center; }
+  .screen.active { display: flex; }
 
-  /* ===== shared window (DQ style) ===== */
+  /* ===== window (DQ風) ===== */
   .window {
     background: var(--win-bg);
     border: 3px solid var(--win-border);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 14px;
-    box-shadow: 0 0 0 3px #000, inset 0 0 0 2px #000;
+    box-shadow: 0 0 0 3px #000;
   }
 
   /* ===== START ===== */
-  #start-screen { text-align: center; padding: 30px 10px; }
-  #start-screen .logo { font-size: 3.5rem; margin-bottom: 6px; filter: drop-shadow(0 0 12px var(--accent)); }
+  #start-screen { text-align: center; padding: 4vh 6px; overflow-y: auto; }
+  #start-screen .logo { font-size: clamp(3rem, 16vw, 4.2rem); margin-bottom: 4px; filter: drop-shadow(0 0 14px var(--accent)); animation: idle 2s ease-in-out infinite; }
   #start-screen h1 {
-    font-size: 1.9rem; letter-spacing: .08em; margin-bottom: 4px;
-    color: var(--accent); text-shadow: 2px 2px 0 #000, 3px 3px 0 #5a2d00;
+    font-size: clamp(1.4rem, 7vw, 2rem); letter-spacing: .04em; margin-bottom: 4px;
+    color: var(--accent); text-shadow: 2px 2px 0 #000, 3px 3px 0 #7a5200;
+    line-height: 1.3;
   }
-  #start-screen .sub { color: #9fb4d8; font-size: .8rem; letter-spacing: .1em; margin-bottom: 22px; }
+  #start-screen .sub { color: #9fb4d8; font-size: .72rem; letter-spacing: .12em; margin-bottom: 18px; }
   #start-screen .story {
-    text-align: left; font-size: .9rem; line-height: 1.9; color: #e6ecff;
-    margin: 0 auto 24px; max-width: 380px;
+    text-align: left; font-size: clamp(.8rem, 3.6vw, .92rem); line-height: 1.95; color: #e6ecff;
+    margin: 0 auto 22px; max-width: 380px;
   }
 
   .btn {
-    font-family: 'Courier New', monospace;
+    font-family: inherit;
     font-weight: bold;
-    padding: 12px 30px;
-    font-size: 1rem;
-    letter-spacing: .12em;
+    min-height: 52px;
+    padding: 14px 30px;
+    font-size: clamp(.95rem, 4.2vw, 1.05rem);
+    letter-spacing: .1em;
     border: 3px solid #fff;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     background: var(--dq-blue);
     color: #fff;
     box-shadow: 0 0 0 3px #000;
-    transition: transform .1s, background .1s;
+    transition: transform .08s, background .1s;
   }
-  .btn:hover { background: #143a7a; transform: translateY(-2px); }
-  .btn:active { transform: translateY(0); }
+  .btn:active { background: #143a7a; transform: translateY(2px) scale(.98); }
 
   /* ===== BATTLE ===== */
+  #battle-screen.active { justify-content: flex-start; gap: 8px; }
+
   #battle-field {
-    background: linear-gradient(180deg, #061029 0%, #0a1a3a 55%, #14213f 100%);
+    background: linear-gradient(180deg, #050b1f 0%, #0a1a3a 55%, #12223f 100%);
     border: 3px solid #fff;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 0 0 3px #000;
-    height: 240px;
+    height: clamp(180px, 34vh, 260px);
     position: relative;
     overflow: hidden;
-    margin-bottom: 10px;
+    flex-shrink: 0;
   }
-  /* simple "floor" + stars */
   #battle-field::after {
     content: "";
-    position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
+    position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
     background:
-      radial-gradient(circle at 20% 40%, rgba(255,255,255,.06) 0 2px, transparent 3px) repeat,
-      linear-gradient(180deg, transparent, rgba(0,0,0,.5));
-    background-size: 40px 40px, 100% 100%;
+      radial-gradient(circle at 20% 40%, rgba(255,255,255,.05) 0 2px, transparent 3px) repeat,
+      linear-gradient(180deg, transparent, rgba(0,0,0,.55));
+    background-size: 38px 38px, 100% 100%;
   }
+  #battle-field.flash { animation: fieldflash .18s; }
+  @keyframes fieldflash { 0%,100%{filter:none} 50%{filter:brightness(2.4) contrast(1.4)} }
 
-  #enemy-wrap {
-    position: absolute;
-    top: 30px; left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    width: 100%;
-  }
+  /* enemy */
+  #enemy-wrap { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; z-index: 2; }
   #enemy-sprite {
-    font-size: 5.5rem;
-    line-height: 1;
-    display: inline-block;
+    font-size: clamp(4rem, 20vw, 5.2rem); line-height: 1; display: inline-block;
     filter: drop-shadow(0 6px 6px rgba(0,0,0,.6));
     animation: idle 1.6s ease-in-out infinite;
   }
   @keyframes idle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
   #enemy-sprite.hit { animation: shake .3s; }
-  @keyframes shake {
-    0%,100%{transform:translateX(0)}
-    20%{transform:translateX(-10px)} 40%{transform:translateX(10px)}
-    60%{transform:translateX(-7px)} 80%{transform:translateX(7px)}
-  }
-  #enemy-sprite.dead { animation: vanish .7s forwards; }
-  @keyframes vanish { to { opacity: 0; transform: scale(.4) translateY(20px); filter: blur(4px); } }
-  .flash-red { filter: drop-shadow(0 0 0 #fff) brightness(2) sepia(1) hue-rotate(-30deg) saturate(6) !important; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-11px)} 40%{transform:translateX(11px)} 60%{transform:translateX(-7px)} 80%{transform:translateX(7px)} }
+  #enemy-sprite.enemy-atk { animation: enemyLunge .5s; }
+  @keyframes enemyLunge { 0%,100%{transform:translate(0,0)} 40%{transform:translate(-30px,60px) scale(1.1)} }
+  #enemy-sprite.dead { animation: vanish .8s forwards; }
+  @keyframes vanish { to { opacity: 0; transform: scale(.35) translateY(24px) rotate(12deg); filter: blur(5px); } }
+  .flash-red { filter: brightness(2) sepia(1) hue-rotate(-30deg) saturate(6) !important; }
 
-  #enemy-name { margin-top: 8px; font-size: .95rem; letter-spacing: .1em; text-shadow: 1px 1px 0 #000; }
+  #enemy-name { margin-top: 6px; font-size: clamp(.8rem, 4vw, .95rem); letter-spacing: .08em; text-shadow: 1px 1px 0 #000; }
+  #enemy-hp-wrap { width: 62%; max-width: 200px; margin: 6px auto 0; background:#000; border:2px solid #fff; border-radius:5px; height: 13px; overflow: hidden; }
+  #enemy-hp-bar { height: 100%; width: 100%; background: var(--hp); transition: width .35s ease; }
 
-  /* enemy HP bar */
-  #enemy-hp-wrap {
-    width: 180px; margin: 6px auto 0;
-    background: #000; border: 2px solid #fff; border-radius: 4px;
-    height: 12px; overflow: hidden;
+  /* hero sprite in field */
+  #hero-sprite {
+    position: absolute; bottom: 12px; left: 26px; z-index: 3;
+    font-size: clamp(2.6rem, 13vw, 3.4rem); line-height: 1;
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,.6));
+    animation: idle 1.9s ease-in-out infinite;
   }
-  #enemy-hp-bar { height: 100%; width: 100%; background: var(--hp-low); transition: width .35s ease; }
+  #hero-sprite.attack { animation: heroLunge .45s; }
+  @keyframes heroLunge { 0%,100%{transform:translate(0,0)} 45%{transform:translate(130px,-70px) scale(1.15)} }
+  #hero-sprite.cast { animation: heroCast .5s; }
+  @keyframes heroCast { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px) scale(1.12)} }
+  #hero-sprite.hurt { animation: shake .3s; }
+  #hero-sprite.hurt-flash { filter: brightness(2) sepia(1) hue-rotate(-30deg) saturate(6) !important; }
+
+  /* slash / spell FX */
+  .fx { position: absolute; z-index: 4; pointer-events: none; font-size: 3rem; }
+  .slash-fx { top: 40px; left: 50%; transform: translateX(-50%); animation: slashfx .4s forwards; }
+  @keyframes slashfx { 0%{opacity:0;transform:translateX(-50%) scale(.4) rotate(-40deg)} 40%{opacity:1;transform:translateX(-50%) scale(1.3) rotate(10deg)} 100%{opacity:0;transform:translateX(-50%) scale(1.5) rotate(20deg)} }
 
   /* damage popup */
-  .dmg-pop {
-    position: absolute;
-    font-weight: bold; font-size: 1.6rem;
-    color: #fff; text-shadow: 2px 2px 0 #000, 0 0 8px var(--accent);
-    pointer-events: none;
-    animation: pop 0.9s ease-out forwards;
-    z-index: 5;
-  }
-  .dmg-pop.crit { color: var(--accent); font-size: 2rem; }
-  .dmg-pop.heal { color: var(--hp); }
+  .dmg-pop { position: absolute; font-weight: bold; font-size: clamp(1.4rem, 7vw, 1.8rem); color: #fff; text-shadow: 2px 2px 0 #000, 0 0 8px var(--accent); pointer-events: none; animation: pop .95s ease-out forwards; z-index: 6; }
+  .dmg-pop.crit { color: var(--accent); font-size: clamp(1.8rem, 9vw, 2.3rem); }
+  .dmg-pop.heal { color: #6dff8a; }
   .dmg-pop.foe  { color: var(--hp-low); }
-  @keyframes pop {
-    0% { transform: translate(-50%,0) scale(.6); opacity: 0; }
-    20% { transform: translate(-50%,-14px) scale(1.15); opacity: 1; }
-    100% { transform: translate(-50%,-55px) scale(1); opacity: 0; }
-  }
+  @keyframes pop { 0%{transform:translate(-50%,0) scale(.6);opacity:0} 20%{transform:translate(-50%,-14px) scale(1.15);opacity:1} 100%{transform:translate(-50%,-58px) scale(1);opacity:0} }
 
-  /* ===== HERO STATUS ===== */
-  #hero-status {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 6px 14px;
-    align-items: center;
-    font-size: .82rem;
-    margin-bottom: 10px;
-    padding: 10px 14px;
+  /* boss hint banner */
+  #hint-banner {
+    display: none;
+    background: rgba(255,207,77,.12);
+    border: 2px dashed var(--accent);
+    color: var(--accent);
+    border-radius: 8px;
+    font-size: clamp(.68rem, 3.2vw, .78rem);
+    line-height: 1.5;
+    padding: 7px 10px;
+    text-align: center;
+    flex-shrink: 0;
   }
-  #hero-status .name { grid-column: 1 / -1; color: var(--accent); letter-spacing: .12em; font-size: .9rem; }
-  .stat-row { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; }
-  .stat-label { width: 26px; color: #9fb4d8; }
-  .bar-wrap { flex: 1; background:#000; border:2px solid #fff; border-radius:4px; height: 12px; overflow: hidden; }
-  .bar { height: 100%; transition: width .35s ease; }
+  #hint-banner.show { display: block; }
+
+  /* HERO STATUS */
+  #hero-status { padding: 9px 12px; flex-shrink: 0; }
+  #hero-status .name { color: var(--accent); letter-spacing: .1em; font-size: clamp(.8rem,4vw,.9rem); margin-bottom: 6px; display:flex; justify-content:space-between; }
+  #hero-status .lv { color:#9fb4d8; font-size:.72rem; }
+  .stat-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .stat-label { width: 26px; color: #9fb4d8; font-size: .78rem; font-weight: bold; }
+  .bar-wrap { display: block; flex: 1; background:#000; border:2px solid #fff; border-radius:5px; height: 14px; overflow: hidden; }
+  .bar { display: block; height: 100%; width: 100%; transition: width .4s ease; }
   .bar.hp { background: var(--hp); }
   .bar.mp { background: var(--mp); }
-  .stat-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
-  #hp-bar.low { background: var(--hp-low); }
+  #hp-bar.low { animation: hpblink .7s step-end infinite; }
+  @keyframes hpblink { 50% { opacity: .45; } }
+  .stat-num { width: 66px; text-align: right; font-size:.8rem; font-variant-numeric: tabular-nums; }
 
-  /* ===== MESSAGE WINDOW ===== */
-  #message-window {
-    min-height: 64px;
-    font-size: .92rem;
-    line-height: 1.6;
-    letter-spacing: .04em;
-    margin-bottom: 10px;
-    white-space: pre-wrap;
-    position: relative;
-  }
-  #message-text::after {
-    content: "▼";
-    margin-left: 6px;
-    color: var(--accent);
-    opacity: 0;
-  }
+  /* MESSAGE WINDOW */
+  #message-window { min-height: 62px; font-size: clamp(.85rem, 4vw, .95rem); line-height: 1.6; letter-spacing: .02em; white-space: pre-wrap; position: relative; flex-shrink: 0; }
+  #message-text::after { content: "▼"; margin-left: 6px; color: var(--accent); opacity: 0; }
   #message-window.waiting #message-text::after { opacity: 1; animation: blink .8s step-end infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* ===== COMMAND WINDOW ===== */
-  #command-window { padding: 8px; }
-  #command-window h3 {
-    font-size: .75rem; color: #9fb4d8; letter-spacing: .2em;
-    padding: 2px 6px 6px;
-  }
-  #commands { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  /* COMMAND WINDOW */
+  #command-window { padding: 8px; flex-shrink: 0; }
+  #command-window h3 { font-size: .68rem; color: #9fb4d8; letter-spacing: .2em; padding: 2px 6px 6px; }
+  #commands { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .cmd {
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-family: 'Courier New', monospace;
-    font-size: .95rem;
+    background: rgba(255,255,255,.04);
+    border: 2px solid rgba(255,255,255,.15);
+    color: #fff; font-family: inherit;
+    font-size: clamp(.9rem, 4.4vw, 1rem);
     text-align: left;
-    padding: 8px 10px 8px 24px;
-    cursor: pointer;
-    border-radius: 4px;
-    position: relative;
-    letter-spacing: .08em;
+    min-height: 50px;
+    padding: 8px 8px 8px 24px;
+    cursor: pointer; border-radius: 8px; position: relative; letter-spacing: .05em;
+    transition: background .1s, transform .06s;
   }
-  .cmd::before {
-    content: "▶";
-    position: absolute; left: 6px;
-    color: var(--accent);
-    opacity: 0;
-  }
-  .cmd:hover:not(:disabled), .cmd:focus-visible:not(:disabled) {
-    background: rgba(255,255,255,.12); outline: none;
-  }
-  .cmd:hover:not(:disabled)::before, .cmd:focus-visible:not(:disabled)::before { opacity: 1; }
-  .cmd:disabled { color: #5b6783; cursor: default; }
-  .cmd .sub { font-size: .65rem; color: #9fb4d8; }
-
+  .cmd::before { content: "▶"; position: absolute; left: 7px; color: var(--accent); opacity: 0; }
+  .cmd:active:not(:disabled) { background: rgba(255,255,255,.16); transform: scale(.97); }
+  .cmd:active:not(:disabled)::before { opacity: 1; }
+  .cmd:disabled { color: #55617e; border-color: rgba(255,255,255,.05); cursor: default; }
+  .cmd .sub { font-size: .62rem; color: #9fb4d8; display:block; margin-top:2px; }
   #command-window.hidden { visibility: hidden; }
 
-  /* ===== END SCREENS ===== */
-  #clear-screen, #fail-screen { text-align: center; padding: 24px 14px; }
-  .trophy { font-size: 3.5rem; margin-bottom: 6px; filter: drop-shadow(0 0 14px var(--accent)); }
-  #clear-screen h1 { color: var(--accent); font-size: 1.7rem; letter-spacing: .1em; text-shadow: 2px 2px 0 #000; margin-bottom: 8px; }
-  #fail-screen h1 { color: var(--hp-low); font-size: 1.7rem; letter-spacing: .1em; text-shadow: 2px 2px 0 #000; margin-bottom: 8px; }
-  .end-msg { color: #e6ecff; font-size: .9rem; line-height: 1.8; margin-bottom: 6px; }
+  /* END SCREENS */
+  #clear-screen, #fail-screen { text-align: center; padding: 3vh 12px; overflow-y: auto; }
+  .trophy { font-size: clamp(3rem, 15vw, 3.8rem); margin-bottom: 6px; filter: drop-shadow(0 0 14px var(--accent)); }
+  #clear-screen h1 { color: var(--accent); font-size: clamp(1.3rem,6vw,1.7rem); letter-spacing: .06em; text-shadow: 2px 2px 0 #000; margin-bottom: 8px; }
+  #fail-screen h1 { color: var(--hp-low); font-size: clamp(1.3rem,6vw,1.7rem); letter-spacing: .06em; text-shadow: 2px 2px 0 #000; margin-bottom: 8px; }
+  .end-msg { color: #e6ecff; font-size: clamp(.82rem,3.8vw,.92rem); line-height: 1.8; margin-bottom: 6px; }
 
-  .gift-reveal {
-    margin-top: 22px;
-    padding: 20px 16px;
-    background: var(--win-bg);
-    border: 3px solid var(--accent);
-    border-radius: 8px;
-    box-shadow: 0 0 0 3px #000, 0 0 24px rgba(245,166,35,.35);
+  .hint-box {
+    margin: 16px auto 0; max-width: 400px;
+    background: var(--win-bg); border: 3px solid var(--accent); border-radius: 10px;
+    padding: 14px 16px; text-align: left;
+    font-size: clamp(.8rem,3.8vw,.9rem); line-height: 1.8; color: #fff;
+    box-shadow: 0 0 0 3px #000;
   }
-  .gift-reveal h2 { font-size: 1.1rem; letter-spacing: .08em; margin-bottom: 6px; color: var(--accent); }
-  .gift-reveal .desc { color: #9fb4d8; font-size: .78rem; margin-bottom: 12px; }
+  .hint-box b { color: var(--accent); }
 
-  .code-box {
-    background: #000;
-    border: 2px dashed var(--accent);
-    border-radius: 8px;
-    padding: 16px;
-    font-family: 'Courier New', monospace;
-    font-size: 1.35rem;
-    letter-spacing: .15em;
-    color: var(--accent);
-    cursor: pointer;
-    word-break: break-all;
-    transition: background .15s;
-  }
-  .code-box:hover { background: #111; }
-  .copy-hint { font-size: .7rem; color: #888; margin-top: 8px; }
-  .copied-msg { display: none; color: var(--hp); font-size: .8rem; margin-top: 4px; }
+  .gift-reveal { margin: 20px auto 0; max-width: 400px; padding: 20px 16px; background: var(--win-bg); border: 3px solid var(--accent); border-radius: 10px; box-shadow: 0 0 0 3px #000, 0 0 26px rgba(255,207,77,.35); }
+  .gift-reveal h2 { font-size: clamp(1rem,5vw,1.15rem); letter-spacing: .06em; margin-bottom: 6px; color: var(--accent); }
+  .gift-reveal .desc { color: #9fb4d8; font-size: .76rem; margin-bottom: 12px; }
+  .code-box { background:#000; border:2px dashed var(--accent); border-radius:8px; padding:16px; font-family: inherit; font-size: clamp(1.1rem,5.5vw,1.4rem); letter-spacing:.15em; color: var(--accent); cursor:pointer; word-break: break-all; transition: background .15s; }
+  .code-box:active { background:#111; }
+  .copy-hint { font-size:.7rem; color:#888; margin-top:8px; }
+  .copied-msg { display:none; color:#6dff8a; font-size:.8rem; margin-top:4px; }
 
-  #confetti-canvas {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none; z-index: 50;
-  }
+  #confetti-canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:50; }
 </style>
 </head>
 <body>
@@ -276,15 +257,16 @@
 
   <!-- ========== START ========== -->
   <div id="start-screen" class="screen active">
-    <div class="logo">⚔️</div>
-    <h1>ギフトクエスト</h1>
-    <div class="sub">- GIFT QUEST -</div>
+    <div class="logo">🎂</div>
+    <h1>誕生日お祝い<br>クエスト</h1>
+    <div class="sub">- HAPPY BIRTHDAY QUEST -</div>
     <div class="window story">
-      まおうが あらわれ せかいは やみに つつまれた。<br>
-      ゆうしゃよ、まものたちを たおし<br>
-      でんせつの「ほうび」を てにいれよ！<br><br>
-      ぜんぶの てきを たおすと<br>
-      <span style="color:var(--accent)">Amazonギフトコード</span> が もらえる！
+      きょうは たいせつな ひと の たんじょうび！<br>
+      だが おいわいを じゃまする まものたちが あらわれた。<br><br>
+      ゆうしゃ <span style="color:var(--accent)">小山</span> よ、<br>
+      3たいの まものを たおして<br>
+      でんせつの <span style="color:var(--accent)">おいわいギフト</span> を てにいれろ！<br><br>
+      <span style="color:#9fb4d8;font-size:.8rem">※ さいごの まもの は とても てごわい…</span>
     </div>
     <button class="btn" onclick="startGame()">▶ ぼうけんに でる</button>
   </div>
@@ -293,37 +275,38 @@
   <div id="battle-screen" class="screen">
     <div id="battle-field">
       <div id="enemy-wrap">
-        <div id="enemy-sprite">🟦</div>
-        <div id="enemy-name">スライム</div>
+        <div id="enemy-sprite">🐎</div>
+        <div id="enemy-name">田中ダービー</div>
         <div id="enemy-hp-wrap"><div id="enemy-hp-bar"></div></div>
       </div>
+      <div id="hero-sprite">🧙‍♂️</div>
     </div>
 
+    <div id="hint-banner"></div>
+
     <div id="hero-status" class="window">
-      <div class="name">ゆうしゃ</div>
+      <div class="name"><span>小山</span><span class="lv" id="lv-text">Lv.1</span></div>
       <div class="stat-row">
         <span class="stat-label">HP</span>
         <span class="bar-wrap"><span id="hp-bar" class="bar hp"></span></span>
-        <span class="stat-num" id="hp-num">40/40</span>
+        <span class="stat-num" id="hp-num">50/50</span>
       </div>
       <div class="stat-row">
         <span class="stat-label">MP</span>
         <span class="bar-wrap"><span id="mp-bar" class="bar mp"></span></span>
-        <span class="stat-num" id="mp-num">12/12</span>
+        <span class="stat-num" id="mp-num">16/16</span>
       </div>
     </div>
 
-    <div id="message-window" class="window">
-      <span id="message-text"></span>
-    </div>
+    <div id="message-window" class="window"><span id="message-text"></span></div>
 
     <div id="command-window" class="window">
       <h3>コマンド</h3>
       <div id="commands">
         <button class="cmd" data-cmd="fight">たたかう</button>
-        <button class="cmd" data-cmd="spell">じゅもん<span class="sub"> (メラ MP4)</span></button>
-        <button class="cmd" data-cmd="guard">ぼうぎょ</button>
-        <button class="cmd" data-cmd="item">どうぐ<span class="sub" id="herb-count"> (やくそう×3)</span></button>
+        <button class="cmd" data-cmd="spell">じゅもん<span class="sub">メラ / MP4・防御無視</span></button>
+        <button class="cmd" data-cmd="guard">ぼうぎょ<span class="sub">被害半減・MP回復</span></button>
+        <button class="cmd" data-cmd="item">どうぐ<span class="sub" id="herb-count">やくそう×3</span></button>
       </div>
     </div>
   </div>
@@ -332,11 +315,11 @@
   <div id="clear-screen" class="screen">
     <div class="trophy">👑</div>
     <h1>まものを すべて たおした！</h1>
-    <p class="end-msg">せかいに へいわが もどった。<br>ゆうしゃに ほうびを さずけよう！🎉</p>
+    <p class="end-msg">おいわいを じゃまする まものは きえさった。<br>ゆうしゃ 小山 に おいわいギフトを さずけよう！🎉<br>🎂 おたんじょうび おめでとう！ 🎂</p>
 
     <div class="gift-reveal">
       <h2>🎁 Amazonギフトカード</h2>
-      <p class="desc">したの コードを コピーして Amazonで つかってね！</p>
+      <p class="desc">したの コードを タップして コピー → Amazonで つかってね！</p>
       <div class="code-box" id="gift-code" onclick="copyCode()"><!--
         ↓↓↓ ここに Amazonギフトカードのコードを入れてください ↓↓↓
    --><span id="gift-code-text">XXXX-XXXXXX-XXXX</span><!--
@@ -351,8 +334,9 @@
   <!-- ========== FAIL ========== -->
   <div id="fail-screen" class="screen">
     <div class="trophy">💀</div>
-    <h1>ゆうしゃは しんでしまった</h1>
-    <p class="end-msg" id="fail-detail">まものに やられてしまった…<br>もういちど ちょうせんしよう！</p>
+    <h1>小山は ちからつきた…</h1>
+    <p class="end-msg" id="fail-detail"></p>
+    <div class="hint-box" id="hint-box"></div>
     <button class="btn" style="margin-top:22px" onclick="location.reload()">▶ リトライ</button>
   </div>
 
@@ -360,53 +344,88 @@
 
 <script>
 /* =========================================================
-   ギフトクエスト  -  ドラクエ風ターン制バトル
+   誕生日お祝いクエスト  -  ドラクエ風ターン制バトル（スマホ最適化）
    敵を全部たおすと Amazonギフトコードが出る
+   ボス「理不尽魔人ミズモットー」は物理をはね返す→じゅもん必須（負けるとヒント）
    ========================================================= */
 
 /* ---- 敵データ（順番にあらわれる） ---- */
 const ENEMIES = [
-  { name: 'スライム',   sprite: '🟦', maxHp: 14, atk: 6,  def: 1 },
-  { name: 'おおがらす', sprite: '🦇', maxHp: 26, atk: 11, def: 2 },
-  { name: 'まおう',     sprite: '🐲', maxHp: 50, atk: 16, def: 5, boss: true },
+  { name: '田中ダービー', sprite: '🐎', maxHp: 24, atk: 10, def: 2 },
+  { name: 'はやっしー',   sprite: '🦖', maxHp: 40, atk: 13, def: 4, twin: true },   // 爪の2回攻撃
+  { name: '理不尽魔人ミズモットー', sprite: '👹', maxHp: 62, atk: 15, def: 40, boss: true, reflect: true },
 ];
 
-/* ---- 主人公データ ---- */
-const HERO_BASE = { maxHp: 42, maxMp: 12, atk: 11, def: 5 };
-const HERB_HEAL = 25;
+/* ---- 主人公 小山 ---- */
+const HERO_BASE = { maxHp: 50, maxMp: 16, atk: 12, def: 6 };
+const HERB_HEAL = 30;
+const MERA_COST = 4;
+const GUARD_MP  = 4;      // ぼうぎょで回復するMP
 
-let hero, enemy, enemyIdx, herbs, busy, guarding;
+let hero, enemy, enemyIdx, herbs, busy, guarding, level;
 
 /* ---- DOM ---- */
 const $ = id => document.getElementById(id);
-const msgWin   = $('message-window');
-const msgText  = $('message-text');
-const cmdWin   = $('command-window');
-const cmds     = [...document.querySelectorAll('.cmd')];
+const msgWin  = $('message-window');
+const msgText = $('message-text');
+const cmdWin  = $('command-window');
+const cmds    = [...document.querySelectorAll('.cmd')];
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active');
 }
 
+/* ============ サウンド（WebAudio・チップチューン） ============ */
+let actx = null;
+function initAudio() {
+  if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+}
+function tone(freq, dur, type = 'square', vol = 0.14, when = 0) {
+  if (!actx) return;
+  const t = actx.currentTime + when;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t); o.stop(t + dur);
+}
+function noise(dur, vol = 0.18) {
+  if (!actx) return;
+  const t = actx.currentTime;
+  const buf = actx.createBuffer(1, actx.sampleRate * dur, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const src = actx.createBufferSource(); src.buffer = buf;
+  const g = actx.createGain(); g.gain.setValueAtTime(vol, t);
+  src.connect(g).connect(actx.destination); src.start(t);
+}
+const sfx = {
+  attack: () => { tone(520, .07, 'square'); tone(300, .09, 'square', .12, .05); },
+  hit:    () => { noise(.14); },
+  magic:  () => { tone(400,.06,'sawtooth'); tone(620,.06,'sawtooth',.12,.06); tone(880,.12,'sawtooth',.12,.12); },
+  heal:   () => { tone(660,.1,'sine',.16); tone(990,.16,'sine',.16,.1); },
+  guard:  () => { tone(160,.14,'triangle',.18); },
+  reflect:() => { tone(220,.05,'square',.18); tone(180,.18,'square',.16,.05); noise(.1,.12); },
+  win:    () => { [523,659,784,1046].forEach((f,i)=>tone(f,.18,'square',.16,i*.13)); },
+  lose:   () => { [440,349,262,196].forEach((f,i)=>tone(f,.3,'triangle',.16,i*.18)); },
+  levelup:() => { [523,784,1046].forEach((f,i)=>tone(f,.15,'square',.16,i*.1)); },
+};
+function vibrate(ms) { if (navigator.vibrate) try { navigator.vibrate(ms); } catch(e){} }
+
 /* ============ メッセージ（タイプライター） ============ */
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
 function typeMessage(text, hold = 650) {
   return new Promise(resolve => {
     msgWin.classList.remove('waiting');
     msgText.textContent = '';
     let i = 0;
-    const tick = () => {
-      if (i < text.length) {
-        msgText.textContent += text[i++];
-        setTimeout(tick, 22);
-      } else {
-        msgWin.classList.add('waiting');
-        setTimeout(() => { msgWin.classList.remove('waiting'); resolve(); }, hold);
-      }
-    };
-    tick();
+    (function tick() {
+      if (i < text.length) { msgText.textContent += text[i++]; setTimeout(tick, 20); }
+      else { msgWin.classList.add('waiting'); setTimeout(() => { msgWin.classList.remove('waiting'); resolve(); }, hold); }
+    })();
   });
 }
 
@@ -416,48 +435,62 @@ function refreshHero() {
   const mpPct = Math.max(0, hero.mp / hero.maxMp * 100);
   const hpBar = $('hp-bar');
   hpBar.style.width = hpPct + '%';
-  hpBar.classList.toggle('low', hero.hp <= hero.maxHp * 0.3);
+  hpBar.classList.toggle('low', hero.hp <= hero.maxHp * 0.3 && hero.hp > 0);
   $('mp-bar').style.width = mpPct + '%';
   $('hp-num').textContent = Math.max(0, hero.hp) + '/' + hero.maxHp;
   $('mp-num').textContent = Math.max(0, hero.mp) + '/' + hero.maxMp;
-  $('herb-count').textContent = ' (やくそう×' + herbs + ')';
+  $('herb-count').textContent = 'やくそう×' + herbs;
+  $('lv-text').textContent = 'Lv.' + level;
 }
 function refreshEnemy() {
-  const pct = Math.max(0, enemy.hp / enemy.maxHp * 100);
-  $('enemy-hp-bar').style.width = pct + '%';
+  $('enemy-hp-bar').style.width = Math.max(0, enemy.hp / enemy.maxHp * 100) + '%';
 }
 
 /* ============ 演出 ============ */
-// target: 'enemy' = 上中央 / 'hero' = 下中央。 kind: '' | 'crit' | 'heal' | 'foe'
 function popDamage(value, kind, target) {
   const field = $('battle-field');
   const pop = document.createElement('div');
   pop.className = 'dmg-pop' + (kind ? ' ' + kind : '');
   pop.textContent = (kind === 'heal' ? '+' : '') + value;
-  pop.style.left = '50%';
-  pop.style.top  = (target === 'hero') ? '160px' : '60px';
+  pop.style.left = (target === 'hero') ? '18%' : '50%';
+  pop.style.top  = (target === 'hero') ? '150px' : '54px';
   field.appendChild(pop);
-  setTimeout(() => pop.remove(), 900);
+  setTimeout(() => pop.remove(), 950);
 }
-function shakeEnemy() {
+function slashFx() {
+  const field = $('battle-field');
+  const fx = document.createElement('div');
+  fx.className = 'fx slash-fx'; fx.textContent = '⚔️';
+  field.appendChild(fx);
+  setTimeout(() => fx.remove(), 420);
+}
+function hitEnemy() {
   const s = $('enemy-sprite');
   s.classList.remove('hit'); void s.offsetWidth; s.classList.add('hit');
-  s.classList.add('flash-red');
-  setTimeout(() => s.classList.remove('flash-red'), 140);
+  s.classList.add('flash-red'); setTimeout(() => s.classList.remove('flash-red'), 150);
 }
-function shakeField() {
-  const f = $('battle-field');
-  f.animate(
-    [{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],
-    {duration:250}
-  );
+function hurtHero() {
+  const h = $('hero-sprite');
+  h.classList.remove('hurt'); void h.offsetWidth; h.classList.add('hurt');
+  h.classList.add('hurt-flash'); setTimeout(() => h.classList.remove('hurt-flash'), 150);
+  $('battle-field').classList.add('flash'); setTimeout(() => $('battle-field').classList.remove('flash'), 180);
+}
+function animHero(cls) {
+  const h = $('hero-sprite');
+  h.classList.remove('attack','cast'); void h.offsetWidth; h.classList.add(cls);
+  setTimeout(() => h.classList.remove(cls), 500);
+}
+function animEnemyAttack() {
+  const s = $('enemy-sprite');
+  s.classList.remove('enemy-atk'); void s.offsetWidth; s.classList.add('enemy-atk');
+  setTimeout(() => s.classList.remove('enemy-atk'), 500);
 }
 
-/* ============ コマンド表示 ============ */
+/* ============ コマンド ============ */
 function showCommands() {
   cmdWin.classList.remove('hidden');
   cmds.forEach(c => {
-    if (c.dataset.cmd === 'spell') c.disabled = hero.mp < 4;
+    if (c.dataset.cmd === 'spell') c.disabled = hero.mp < MERA_COST;
     else if (c.dataset.cmd === 'item') c.disabled = herbs <= 0;
     else c.disabled = false;
   });
@@ -466,18 +499,13 @@ function hideCommands() { cmdWin.classList.add('hidden'); }
 
 /* ============ 計算 ============ */
 function rint(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+function calcDamage(atk, def, spread = 3) { return Math.max(1, atk - Math.floor(def / 2) + rint(-1, spread)); }
 
-function calcDamage(atk, def, spread = 3) {
-  return Math.max(1, atk - Math.floor(def / 2) + rint(-1, spread));
-}
-
-/* ============ ゲーム開始 ============ */
+/* ============ 開始 ============ */
 function startGame() {
+  initAudio();
   hero = { ...HERO_BASE, hp: HERO_BASE.maxHp, mp: HERO_BASE.maxMp };
-  herbs = 3;
-  enemyIdx = -1;
-  busy = false;
-  guarding = false;
+  herbs = 3; enemyIdx = -1; busy = false; guarding = false; level = 1;
   showScreen('battle-screen');
   refreshHero();
   nextEnemy();
@@ -488,86 +516,90 @@ async function nextEnemy() {
   const e = ENEMIES[enemyIdx];
   enemy = { ...e, hp: e.maxHp };
   const sprite = $('enemy-sprite');
-  sprite.className = '';
-  sprite.textContent = e.sprite;
+  sprite.className = ''; sprite.textContent = e.sprite;
   $('enemy-name').textContent = e.name;
   refreshEnemy();
 
-  busy = true;
-  hideCommands();
-  await sleep(300);
-  await typeMessage((e.boss ? 'まおうが たちふさがった！' : e.name + 'が あらわれた！'), 700);
+  // ボスで、前に負けたことがあればヒントバナー表示
+  const banner = $('hint-banner');
+  if (e.boss && localStorage.getItem('mizu_defeated') === '1') {
+    banner.textContent = '💡 ミズモットーに「たたかう」は はね返される！「じゅもん(メラ)」で攻め、MPが切れたら「ぼうぎょ」でMP回復！';
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  busy = true; hideCommands();
+  await sleep(280);
+  await typeMessage(e.boss ? (e.name + 'が たちふさがった！') : (e.name + 'が あらわれた！'), 750);
   busy = false;
   await playerTurnReady();
 }
 
 async function playerTurnReady() {
   guarding = false;
-  await typeMessage('ゆうしゃは どうする？', 0);
   msgWin.classList.remove('waiting');
-  msgText.textContent = 'ゆうしゃは どうする？';
+  msgText.textContent = '小山は どうする？';
   showCommands();
 }
 
-/* ============ プレイヤーの行動 ============ */
+/* ============ プレイヤー行動 ============ */
 cmds.forEach(c => c.addEventListener('click', () => onCommand(c.dataset.cmd)));
 
 async function onCommand(cmd) {
   if (busy) return;
-  busy = true;
-  hideCommands();
+  busy = true; hideCommands();
 
-  if (cmd === 'fight') {
-    await heroAttack(false);
-  } else if (cmd === 'spell') {
-    if (hero.mp < 4) { busy = false; showCommands(); return; }
-    await heroAttack(true);
-  } else if (cmd === 'guard') {
-    guarding = true;
-    await typeMessage('ゆうしゃは みをまもっている！', 500);
-  } else if (cmd === 'item') {
-    if (herbs <= 0) { busy = false; showCommands(); return; }
-    await useHerb();
-  }
+  if (cmd === 'fight')      await heroAttack();
+  else if (cmd === 'spell') { if (hero.mp < MERA_COST) { busy=false; showCommands(); return; } await heroSpell(); }
+  else if (cmd === 'guard') { guarding = true; sfx.guard(); hero.mp = Math.min(hero.maxMp, hero.mp + GUARD_MP); refreshHero(); await typeMessage('小山は みをまもり ちからをためた！\nMPが ' + GUARD_MP + ' かいふくした！', 550); }
+  else if (cmd === 'item')  { if (herbs <= 0) { busy=false; showCommands(); return; } await useHerb(); }
 
-  // 敵が倒れたか？
-  if (enemy.hp <= 0) {
-    await enemyDefeated();
-    return;
-  }
+  if (enemy.hp <= 0) { await enemyDefeated(); return; }
 
   await enemyTurn();
 
-  if (hero.hp <= 0) {
-    await gameOver();
-    return;
-  }
+  if (hero.hp <= 0) { await gameOver(); return; }
 
   busy = false;
   await playerTurnReady();
 }
 
-async function heroAttack(isSpell) {
-  let dmg, crit = false;
-  if (isSpell) {
-    hero.mp -= 4;
-    refreshHero();
-    await typeMessage('ゆうしゃは メラを となえた！', 450);
-    dmg = calcDamage(hero.atk + 8, Math.floor(enemy.def / 2), 4); // 呪文は防御を無視気味
-  } else {
-    await typeMessage('ゆうしゃの こうげき！', 380);
-    crit = Math.random() < 1 / 12;
-    dmg = calcDamage(hero.atk, enemy.def, 3);
-    if (crit) dmg *= 2;
+async function heroAttack() {
+  await typeMessage('小山の こうげき！', 320);
+  animHero('attack'); slashFx(); sfx.attack();
+
+  // ボスは物理をはね返す（理不尽）
+  if (enemy.reflect) {
+    await sleep(120);
+    sfx.reflect(); vibrate(60); hurtHero();
+    const back = rint(6, 11);
+    hero.hp -= back; refreshHero();
+    popDamage(back, 'foe', 'hero');
+    await typeMessage(enemy.name + 'は こうげきを はね返した！\n小山は ' + back + 'の ダメージ！ 理不尽だ…', 750);
+    return;
   }
 
-  shakeEnemy();
-  popDamage(dmg, (crit || isSpell) ? 'crit' : '', 'enemy');
-  enemy.hp -= dmg;
-  refreshEnemy();
+  await sleep(120);
+  const crit = Math.random() < 1 / 12;
+  let dmg = calcDamage(hero.atk, enemy.def, 3);
+  if (crit) dmg *= 2;
+  hitEnemy(); sfx.hit(); vibrate(30);
+  popDamage(dmg, crit ? 'crit' : '', 'enemy');
+  enemy.hp -= dmg; refreshEnemy();
+  await typeMessage((crit ? 'かいしんの いちげき！\n' : '') + enemy.name + 'に ' + dmg + 'の ダメージ！', 600);
+}
 
-  if (crit) await typeMessage('かいしんの いちげき！\n' + enemy.name + 'に ' + dmg + 'の ダメージ！', 650);
-  else await typeMessage(enemy.name + 'に ' + dmg + 'の ダメージ！', 600);
+async function heroSpell() {
+  hero.mp -= MERA_COST; refreshHero();
+  await typeMessage('小山は メラを となえた！', 380);
+  animHero('cast'); sfx.magic();
+  await sleep(160);
+  const dmg = rint(15, 22);   // 防御無視
+  hitEnemy(); vibrate(40);
+  popDamage(dmg, 'crit', 'enemy');
+  enemy.hp -= dmg; refreshEnemy();
+  await typeMessage('メラの ほのおが つつんだ！\n' + enemy.name + 'に ' + dmg + 'の ダメージ！', 620);
 }
 
 async function useHerb() {
@@ -575,60 +607,80 @@ async function useHerb() {
   const before = hero.hp;
   hero.hp = Math.min(hero.maxHp, hero.hp + HERB_HEAL);
   const healed = hero.hp - before;
-  refreshHero();
+  refreshHero(); sfx.heal();
   popDamage(healed, 'heal', 'hero');
-  await typeMessage('ゆうしゃは やくそうを つかった！\nHPが ' + healed + ' かいふくした！', 650);
+  await typeMessage('小山は やくそうを つかった！\nHPが ' + healed + ' かいふくした！', 620);
 }
 
-/* ============ 敵のターン ============ */
+/* ============ 敵ターン ============ */
 async function enemyTurn() {
-  // ボスはたまに強力な一撃
-  const fierce = enemy.boss && Math.random() < 0.3;
-  if (fierce) await typeMessage(enemy.name + 'は ほのおを はいた！', 500);
-  else await typeMessage(enemy.name + 'の こうげき！', 450);
+  const hits = enemy.twin ? 2 : 1;                     // はやっしーは2回攻撃
+  const fierce = enemy.boss && Math.random() < 0.35;   // ミズモットーの理不尽な一撃
 
-  let dmg = calcDamage(enemy.atk + (fierce ? 6 : 0), hero.def, 3);
-  if (guarding) dmg = Math.max(1, Math.floor(dmg / 2));
+  for (let n = 0; n < hits; n++) {
+    if (hero.hp <= 0) break;
+    if (n === 0) {
+      if (fierce)          await typeMessage(enemy.name + 'は 理不尽な いちげきを はなった！', 480);
+      else if (enemy.twin) await typeMessage(enemy.name + 'の するどい ツメこうげき！', 450);
+      else                 await typeMessage(enemy.name + 'の こうげき！', 430);
+    } else {
+      await typeMessage('さらに もういちど ひっかいた！', 380);
+    }
+    animEnemyAttack(); await sleep(140);
 
-  shakeField();
-  hero.hp -= dmg;
-  refreshHero();
-  popDamage(dmg, 'foe', 'hero');
-
-  if (guarding) await typeMessage('ぼうぎょで はんぶんに へらした！\nゆうしゃは ' + dmg + 'の ダメージ！', 650);
-  else await typeMessage('ゆうしゃは ' + dmg + 'の ダメージを うけた！', 650);
-}
-
-/* ============ 敵撃破 / 勝利 ============ */
-async function enemyDefeated() {
-  const sprite = $('enemy-sprite');
-  sprite.classList.add('dead');
-  $('enemy-hp-bar').style.width = '0%';
-  await typeMessage(enemy.name + 'を たおした！', 800);
-
-  if (enemyIdx >= ENEMIES.length - 1) {
-    await victory();
-  } else {
-    // 少し回復してあげる（テンポ用）
-    const reward = 8;
-    hero.hp = Math.min(hero.maxHp, hero.hp + reward);
-    hero.mp = Math.min(hero.maxMp, hero.mp + 4);
-    refreshHero();
-    await typeMessage('ゆうしゃは すこし たいりょくを とりもどした！', 600);
-    await nextEnemy();
+    let dmg = calcDamage(enemy.atk + (fierce ? 8 : 0), hero.def, 3);
+    if (guarding) dmg = Math.max(1, Math.floor(dmg / 2));
+    hurtHero(); sfx.hit(); vibrate(fierce ? 90 : 45);
+    hero.hp -= dmg; refreshHero();
+    popDamage(dmg, 'foe', 'hero');
+    await typeMessage((guarding ? 'ぼうぎょで はんぶんに！\n' : '') + '小山は ' + dmg + 'の ダメージ！', 560);
   }
 }
 
+/* ============ 撃破 / 勝利 / 敗北 ============ */
+async function enemyDefeated() {
+  $('enemy-sprite').classList.add('dead');
+  $('enemy-hp-bar').style.width = '0%';
+  sfx.win(); vibrate([40,40,80]);
+  await typeMessage(enemy.name + 'を たおした！', 800);
+
+  if (enemyIdx >= ENEMIES.length - 1) { await victory(); return; }
+
+  // レベルアップ（MP全回復・HP一部回復）
+  level++;
+  hero.hp = Math.min(hero.maxHp, hero.hp + Math.floor(hero.maxHp * 0.4));
+  hero.mp = hero.maxMp;
+  refreshHero(); sfx.levelup();
+  await typeMessage('小山は レベルが あがった！ (Lv.' + level + ')\nHPと MPが かいふくした！', 750);
+  await nextEnemy();
+}
+
 async function victory() {
-  await typeMessage('まおうを たおした！ せかいに へいわが もどった！', 900);
+  localStorage.removeItem('mizu_defeated');
+  await typeMessage('ミズモットーを たおした！ おいわいを とりもどした！', 900);
   showScreen('clear-screen');
   launchConfetti();
 }
 
 async function gameOver() {
-  await typeMessage('ゆうしゃは ちからつきた…', 800);
-  $('fail-detail').innerHTML =
-    enemy.name + 'に やられてしまった…<br>そうびを ととのえて もういちど！';
+  sfx.lose(); vibrate([80,60,120]);
+  await typeMessage('小山は ちからつきた…', 800);
+
+  let detail, hint;
+  if (enemy.boss) {
+    localStorage.setItem('mizu_defeated', '1');
+    detail = '理不尽魔人ミズモットーに やられてしまった…';
+    hint = '💡 <b>ヒント</b><br>' +
+      'ミズモットーは <b>「たたかう」を はね返す</b>！ 物理では ダメージを あたえられず、逆に 小山が キズつく。<br><br>' +
+      'ダメージを あたえられるのは <b>「じゅもん(メラ)」だけ</b>。<br>' +
+      'MPが たりなくなったら <b>「ぼうぎょ」で MPを 回復</b>しながら、メラと ぼうぎょを くりかえせ！<br>' +
+      'ピンチのときは <b>やくそう</b>も わすれずに。';
+  } else {
+    detail = enemy.name + 'に やられてしまった…';
+    hint = '💡 <b>ヒント</b><br>ピンチのときは <b>「やくそう」</b>で回復！ つよい てきには <b>「じゅもん(メラ)」</b>も つかおう。<br>「ぼうぎょ」は 被害を半減し MPも 回復するぞ。';
+  }
+  $('fail-detail').innerHTML = detail;
+  $('hint-box').innerHTML = hint;
   showScreen('fail-screen');
 }
 
@@ -636,42 +688,33 @@ async function gameOver() {
 function copyCode() {
   const code = $('gift-code-text').textContent.trim();
   navigator.clipboard.writeText(code).then(() => {
-    const msg = $('copied-msg');
-    msg.style.display = 'block';
+    const msg = $('copied-msg'); msg.style.display = 'block';
     setTimeout(() => msg.style.display = 'none', 2000);
   }).catch(() => {});
 }
 
 /* ============ 紙吹雪 ============ */
 function launchConfetti() {
-  const canvas = $('confetti-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const particles = Array.from({length: 140}, () => ({
-    x: Math.random() * canvas.width, y: -10,
-    r: Math.random() * 7 + 4,
-    color: ['#f5a623','#e94560','#4caf50','#2196f3','#ff69b4','#fff'][Math.floor(Math.random()*6)],
-    vx: (Math.random() - .5) * 3, vy: Math.random() * 3 + 2,
-    rot: Math.random() * 360, rotV: (Math.random() - .5) * 6,
+  const canvas = $('confetti-canvas'), ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const particles = Array.from({length: 160}, () => ({
+    x: Math.random()*canvas.width, y: -10, r: Math.random()*7+4,
+    color: ['#ffcf4d','#ff4d5e','#6dff8a','#3aa0ff','#ff69b4','#fff'][Math.floor(Math.random()*6)],
+    vx: (Math.random()-.5)*3, vy: Math.random()*3+2, rot: Math.random()*360, rotV: (Math.random()-.5)*6,
   }));
   let frame;
   (function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     let alive = false;
     for (const p of particles) {
       p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
       if (p.y < canvas.height + 10) alive = true;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot * Math.PI / 180);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
-      ctx.restore();
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); ctx.restore();
     }
     if (alive) frame = requestAnimationFrame(animate);
   })();
-  setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0,0,canvas.width,canvas.height); }, 5000);
+  setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0,0,canvas.width,canvas.height); }, 5500);
 }
 </script>
 </body>
